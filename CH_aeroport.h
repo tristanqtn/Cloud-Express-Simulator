@@ -53,7 +53,7 @@ class Aeroport
     public :
 
         Aeroport(std::string nom_fichier, int nombre_aeroport);
-
+        Aeroport();
         ~Aeroport();
 
         std::string get_nom();

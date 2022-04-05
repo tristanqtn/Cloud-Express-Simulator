@@ -87,6 +87,14 @@ Aeroport::Aeroport(string nom_fichier, int nombre_aeroport)
 }
 
 
+//Constructeur par défaur
+Aeroport::Aeroport()
+    : m_nom(""), m_nombre_pistes(-1), m_nombre_places_sol(-1), m_delai_attente_sol(-1), m_temps_acces_pistes(-1), m_delai_anticollisions(-1), m_temps_decollage_atterissage(-1), m_duree_boucle_attente_vol(-1)
+{
+
+}
+
+
 // Destructeur
 Aeroport::~Aeroport()
 {

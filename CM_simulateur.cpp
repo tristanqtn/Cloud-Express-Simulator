@@ -24,6 +24,27 @@ Simulateur::~Simulateur()
 
 
 
+////////////////
+// ACCESSEURS //
+////////////////
+
+//Getter de l'indice d'un aéroport
+int Simulateur::getIndiceAeroport(string nomAeroport)
+{
+    //Boucle de recherche de l'aéroport
+    for(int i=0 ; i<int(m_aeroports.size()) ; i++)
+    {
+        if(m_aeroports[i].get_nom() == nomAeroport) //On trouve l'aéroport
+        {
+            return i; //On return son indice
+        }
+    }
+
+    return -1;
+}
+
+
+
     //////////////
     // METHODES //
     //////////////
@@ -31,6 +52,9 @@ Simulateur::~Simulateur()
 //Méthode d'initialisation du simulateur
 void Simulateur::initSimulateur(int modeSimulation, int envergureSimulation)
 {
+    //RouteAerienne routeTempo; //Contient temporairement une route aérienne
+    bool indicRoute = false; //Permet de savoir si une route est déjà référencée
+
     //Initialisation du mode et de l'envergure de la simulation
     m_modeSimulation = modeSimulation;
     m_envergureSimulation = envergureSimulation;
@@ -49,6 +73,53 @@ void Simulateur::initSimulateur(int modeSimulation, int envergureSimulation)
     {
         charger_carte_EXTREME();
     }
+
+
+
+    //Création des routes aériennes entre les aéroports
+    for(int i=0 ; i<int(m_aeroports.size()) ; i++) //Boucle de parcours du vecteur d'aéroports
+    {
+
+        //Boucle de parcours des aéroports connectés à celui-ci
+        for(int j=0 ; j<int(m_aeroports[i].get_distance_aeroports().size()) ; j++)
+        {
+            //Réinitialisation de l'indicateur d'existence de la route
+            indicRoute = false;
+
+            //SI l'aéroport est connecté
+            if(m_aeroports[i].get_distance_aeroports()[j].second != -1)
+            {
+
+                //Boucle de parcours évitant les doublons de routes aériennes
+                for(int k=0 ; k<int(m_ensembleRoutes.size()) ; k++)
+                {
+                    //SI la route est déjà référencée
+                    if((m_ensembleRoutes[k]->getAeroport(0)->get_nom() == m_aeroports[i].get_nom() && m_ensembleRoutes[k]->getAeroport(1)->get_nom() == m_aeroports[i].get_distance_aeroports()[j].first) || (m_ensembleRoutes[k]->getAeroport(0)->get_nom() == m_aeroports[i].get_distance_aeroports()[j].first && m_ensembleRoutes[k]->getAeroport(1)->get_nom() == m_aeroports[i].get_nom()))
+                    {
+                        indicRoute = true; //On l'indique
+                    }
+                }
+
+                //SI la route n'est pas déjà référencée, on le fait
+                if(indicRoute == false)
+                {
+
+                    RouteAerienne* nouvelleRoute = new RouteAerienne();
+                    m_ensembleRoutes.push_back(nouvelleRoute);
+
+                    //On crée la nouvelle route
+                    m_ensembleRoutes.back()->initAeroports(m_aeroports[i], m_aeroports[getIndiceAeroport(m_aeroports[i].get_distance_aeroports()[j].first)]); //Ajout du lien entre les deux aéroports
+                    m_ensembleRoutes.back()->setLongueur(m_aeroports[i].get_distance_aeroports()[j].second); //Ajout de la distance
+                }
+            }
+        }
+    }
+
+    for(int i=0 ; i<int(m_ensembleRoutes.size()) ; i++)
+    {
+        m_ensembleRoutes[i]->afficherInfos();
+    }
+
 
     //Chargement des modeles d'avions
     Avion court_courrier ("data/avion/court.txt");
@@ -85,6 +156,13 @@ void Simulateur::reinitialisationSimulateur()
     {
         m_infos_types_avions.pop_back();
     }
+
+    //Réinitialisation du vecteur contenant les routes aériennes
+    while(int(m_ensembleRoutes.size()) > 0)
+    {
+        m_ensembleRoutes.back() = nullptr;
+        m_ensembleRoutes.pop_back();
+    }
 }
 
 
@@ -105,9 +183,10 @@ Avion Simulateur::creer_avion_aleatoire()
     int modele_aleatoire = rand()%3; //Génération alétoire d'un entier entre 0 et 2 pour modèle
 
     bool autorisation = true; //Booléen d'autorisation pour l'immatriculation
-
+cout << "lancement" << endl;
     Avion nouvel_avion(m_infos_types_avions[choix_aleatoire]); //Construction par copie d'un nouvelle avion
 
+    cout << "creation OK" << endl;
     //Choix du modèle aléatoirement
     if(nouvel_avion.get_type_vol() == "court")
     {//court courrir
@@ -412,12 +491,60 @@ void Simulateur::initCartesFond(Ressources &motherShip)
     blit(motherShip.getBIT(4), motherShip.getBIT(6), 0, 0, 0, 0, motherShip.getBIT(4)->w, motherShip.getBIT(4)->h);
     blit(motherShip.getBIT(5), motherShip.getBIT(7), 0, 0, 0, 0, motherShip.getBIT(5)->w, motherShip.getBIT(5)->h);
 
+    //Affichage de l'ensemble des routes aériennes
+    for(int i=0 ; i<int(m_ensembleRoutes.size()) ; i++)
+    {
+        //Routes aériennes de JOUR
+        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+
+        //Routes aériennes de NUIT
+        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+    }
+
     //Impression de l'ensemble des aéroports
     for(int i=0 ; i<int(m_aeroports.size()) ; i++)
     {
-        //cout << "NOM : " << m_aeroports[i].get_nom() << endl;
-        //cout << m_aeroports[i].get_position().get_coord_x() << " et " << m_aeroports[i].get_position().get_coord_y() << endl;
         masked_stretch_blit(motherShip.getBIT(8), motherShip.getBIT(6), 0, 0, motherShip.getBIT(8)->w, motherShip.getBIT(8)->h, m_aeroports[i].get_position().get_coord_x() - motherShip.getBIT(8)->w/4, m_aeroports[i].get_position().get_coord_y() - motherShip.getBIT(8)->h/2, motherShip.getBIT(8)->w/2, motherShip.getBIT(8)->h/2);
         masked_stretch_blit(motherShip.getBIT(8), motherShip.getBIT(7), 0, 0, motherShip.getBIT(8)->w, motherShip.getBIT(8)->h, m_aeroports[i].get_position().get_coord_x() - motherShip.getBIT(8)->w/4, m_aeroports[i].get_position().get_coord_y() - motherShip.getBIT(8)->h/2, motherShip.getBIT(8)->w/2, motherShip.getBIT(8)->h/2);
     }
+}
+
+
+//Methode d'enregistrement d'un crash
+void Simulateur::ajouter_crash(string modele_avion, string immatriculation, string depart, string arrivee, int anne, int mois, int jour, int heure, int minute)
+{
+    std::ofstream fichier;
+    fichier.open("data/historique_crash/historique_crash.txt", std::ofstream::app); //Ouverture du fichier en mode addition
+
+    if(!fichier)
+    {}
+    else
+    {//Si ouverture réussie
+        //Sauvegarde de la donnée
+        fichier << "Le " <<modele_avion << " du vol " << immatriculation << " au depart de " << depart << " a destination de " << arrivee << " le " << jour << "/" << mois << "/"  << anne << " a " << heure << "h" << minute << "\n";
+        fichier.close();
+    }
+
+}
+
+//Ouverture de l'historique de crash dasn le notepad
+void Simulateur::ouvrir_liste_crash() const
+{
+    system("start notepad \"data\\historique_crash\\historique_crash.txt\"");
 }

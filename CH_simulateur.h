@@ -2,12 +2,13 @@
 #define HEADER_SIMULATEUR_H_INCLUDED
 
 
-#include <cstdlib>
+//#include <cstdlib>
 
 #include "H_header.h"
 #include "CH_avion.h"
 #include "CH_horloge.h"
 #include "CH_aeroport.h"
+#include "CH_routeAerienne.h"
 
 
 
@@ -21,6 +22,8 @@ class Simulateur
         std::vector <Avion> m_flotte_avions;
         std::vector <Avion> m_infos_types_avions;
 
+        std::vector <RouteAerienne*> m_ensembleRoutes;
+
         int m_modeSimulation;
         int m_envergureSimulation;
 
@@ -32,6 +35,8 @@ class Simulateur
         Simulateur();
         ~Simulateur();
 
+        int getIndiceAeroport(std::string nomAeroport);
+
         void initSimulateur(int modeSimulation, int envergureSimulation);
         void reinitialisationSimulateur();
         void afficher_aeroports();
@@ -41,6 +46,10 @@ class Simulateur
         void deroulementGlobal(Ressources &motherShip, bool &indicClic, bool &done);
         void menuESC(bool &done, bool &finDeroulement, bool &indicClic, bool &indicEchap, BITMAP* doubleBuffer, BITMAP* curseur, FONT* policeTitre, FONT* policeChoix);
         void initCartesFond(Ressources &motherShip);
+
+        void ajouter_crash(std::string modele_avion, std::string immatriculation, std::string depart, std::string arrivee, int anne, int mois, int jour, int heure, int minute);
+        void ouvrir_liste_crash() const;
+
 };
 
 #endif // HEADER_SIMULATEUR_H_INCLUDED
