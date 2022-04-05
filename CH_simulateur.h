@@ -46,10 +46,6 @@ class Simulateur
         void deroulementGlobal(Ressources &motherShip, bool &indicClic, bool &done);
         void menuESC(bool &done, bool &finDeroulement, bool &indicClic, bool &indicEchap, BITMAP* doubleBuffer, BITMAP* curseur, FONT* policeTitre, FONT* policeChoix);
         void initCartesFond(Ressources &motherShip);
-
-        void ajouter_crash(std::string modele_avion, std::string immatriculation, std::string depart, std::string arrivee, int anne, int mois, int jour, int heure, int minute);
-        void ouvrir_liste_crash() const;
-
 };
 
 #endif // HEADER_SIMULATEUR_H_INCLUDED

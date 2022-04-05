@@ -30,6 +30,7 @@ int main()
 
         if(!done)
         {
+
             //Création des informations néccessaires à la simulation
             proteus.initSimulateur(modeSimulation, envergureSimulation);
 
@@ -39,9 +40,9 @@ int main()
 
             proteus.deroulementGlobal(motherShip, indicClic, done);
         }
+
     }
     while(!done);
-
 
 
     //Suppression de l'ensemble des ressources du programme

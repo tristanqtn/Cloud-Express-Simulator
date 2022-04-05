@@ -54,6 +54,42 @@ void initTabBIT(vector<BITMAP*> &tabBIT)
             case 8 : //Pointeur de localisation
                 tabBIT[8] = load_bitmap("images/interface/pointeurLocalisation.bmp", NULL);
                 break;
+
+            case 9 : //Pointeur de localisation actif
+                tabBIT[9] = load_bitmap("images/interface/pointeurLocalisationActif.bmp", NULL);
+                break;
+
+            case 10 : //Bouton Pause
+                tabBIT[10] = load_bitmap("images/interface/boutonPause.bmp", NULL);
+                break;
+
+            case 11 : //Bouton Pause Actif
+                tabBIT[11] = load_bitmap("images/interface/boutonPauseActif.bmp", NULL);
+                break;
+
+            case 12 : //Bouton Play
+                tabBIT[12] = load_bitmap("images/interface/boutonPlay.bmp", NULL);
+                break;
+
+            case 13 : //Bouton Play Actif
+                tabBIT[13] = load_bitmap("images/interface/boutonPlayActif.bmp", NULL);
+                break;
+
+            case 14 : //Bouton Speed 1
+                tabBIT[14] = load_bitmap("images/interface/boutonSpeed1.bmp", NULL);
+                break;
+
+            case 15 : //Bouton Speed 1 Actif
+                tabBIT[15] = load_bitmap("images/interface/boutonSpeed1Actif.bmp", NULL);
+                break;
+
+            case 16 : //Bouton Speed 2
+                tabBIT[16] = load_bitmap("images/interface/boutonSpeed2.bmp", NULL);
+                break;
+
+            case 17 : //Bouton Speed 2 Actif
+                tabBIT[17] = load_bitmap("images/interface/boutonSpeed2Actif.bmp", NULL);
+                break;
         }
 
         //Si le tableau est toujours vide, c'est qu'il y a eu une erreur
@@ -116,6 +152,14 @@ void initTabFONT(vector<FONT*> &tabFONT)
 
             case 6 :
                 tabFONT[6] = load_font("polices/Seven Segment/Seven Segment_55.pcx", NULL, NULL);
+                break;
+
+            case 7 :
+                tabFONT[7] = load_font("polices/TOP GUN/TOP GUN_30.pcx", NULL, NULL);
+                break;
+
+            case 8 :
+                tabFONT[8] = load_font("polices/pixellari/pixellari_25.pcx", NULL, NULL);
                 break;
         }
 

@@ -6,8 +6,8 @@
     // DECLARATION DES CONSTANTES //
     ////////////////////////////////
 
-#define NBRE_BITMAPS 9
-#define NBRE_POLICES 7
+#define NBRE_BITMAPS 18
+#define NBRE_POLICES 9
 
 
 

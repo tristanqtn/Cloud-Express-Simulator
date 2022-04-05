@@ -36,6 +36,7 @@ class Aeroport
     private :
 
         std::string m_nom;
+        std::string m_ville;
 
         int m_nombre_pistes;
         int m_nombre_places_sol;
@@ -73,6 +74,8 @@ class Aeroport
 
         void ajouter_aeroport_connecte(std::string nom_aeroport, int distance);
         void afficher_caracteristique(int nombre_aeroport);
+        void actualisationPointeurLocalisation(Ressources &motherShip, bool &indicClic, bool &indicEchap);
+        void menuAeroport(Ressources &motherShip, bool &indicClic, bool &indicEchap);
 };
 
 

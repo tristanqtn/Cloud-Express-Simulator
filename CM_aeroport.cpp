@@ -1,6 +1,7 @@
 #include "H_header.h"
 #include "CH_aeroport.h"
 #include "CH_coordonnees.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -22,6 +23,12 @@ Aeroport::Aeroport(string nom_fichier, int nombre_aeroport)
     fichier_aeroport >> m_nom;
     if ( fichier_aeroport.fail() )
         throw runtime_error("Probleme lecture nom de l'aeroport"); //Erreur de lecture
+
+    //Lecture du nom de la ville
+    fichier_aeroport >> m_ville;
+    replace(m_ville.begin(), m_ville.end(), '_', ' ');
+    if ( fichier_aeroport.fail() )
+        throw runtime_error("Probleme lecture nom de la ville"); //Erreur de lecture
 
     //Lecture de la position de l'aéroport
     int coord_x, coord_y;
@@ -75,8 +82,6 @@ Aeroport::Aeroport(string nom_fichier, int nombre_aeroport)
         fichier_aeroport >> aeroport_connecte>> distance; //Lecture de l'aéroport à atteindre et de la distance les séparant
         if (fichier_aeroport.fail() )
             throw runtime_error("Probleme lecture sommet / successeur du graphe");
-
-                cout << aeroport_connecte << "  " << distance << endl;
 
         //Appel du processus d'ajout de l'aéroport
         ajouter_aeroport_connecte(aeroport_connecte, distance);
@@ -232,4 +237,85 @@ void Aeroport::afficher_caracteristique(int nombre_aeroport)
     }
 
     cout << endl << " ========== " << endl;
+}
+
+
+//Méthode d'actualisation du pointeur de localisation de l'aéroport
+void Aeroport::actualisationPointeurLocalisation(Ressources &motherShip, bool &indicClic, bool &indicEchap)
+{
+    //SI la souris passe sur le pointeur
+    if(mouse_x >= get_position().get_coord_x() - motherShip.getBIT(9)->w/4 && mouse_x <= get_position().get_coord_x() + motherShip.getBIT(9)->w/4 && mouse_y >= get_position().get_coord_y() - motherShip.getBIT(9)->h/2 && mouse_y <= get_position().get_coord_y())
+    {
+        //Affichage du pointeur actif
+        masked_stretch_blit(motherShip.getBIT(9), motherShip.getBIT(0), 0, 0, motherShip.getBIT(9)->w, motherShip.getBIT(9)->h, get_position().get_coord_x() - motherShip.getBIT(9)->w/4, get_position().get_coord_y() - motherShip.getBIT(9)->h/2, motherShip.getBIT(9)->w/2, motherShip.getBIT(9)->h/2);
+
+        //SI clic sur l'aéroport, on va lancer le menu de l'aéroport
+        if(mouse_b & 1 && indicClic == false)
+        {
+            //Lancement du menu Aéroport
+            menuAeroport(motherShip, indicClic, indicEchap);
+        }
+    }
+}
+
+
+//Méthode du menu de l'aéroport
+void Aeroport::menuAeroport(Ressources &motherShip, bool &indicClic, bool &indicEchap)
+{
+    int ecartBords = 100;
+    bool finMenuAeroport = false; //Indicateur de fin du menu Aéroport
+    BITMAP* doubleBufferProvisoire = create_bitmap(SCREEN_W, SCREEN_H); //Permet d'avoir le fond du menu
+
+    //Impression du double buffer précédent dans le double buffer provisoire
+    blit(motherShip.getBIT(0), doubleBufferProvisoire, 0, 0, 0, 0, motherShip.getBIT(0)->w, motherShip.getBIT(0)->h);
+
+    while(!finMenuAeroport)
+    {
+        //Réinitialisation du double buffer
+        clear_bitmap(motherShip.getBIT(0));
+
+        //Impression du fond derrière le menu
+        blit(doubleBufferProvisoire, motherShip.getBIT(0), 0, 0, 0, 0, doubleBufferProvisoire->w, doubleBufferProvisoire->h);
+
+        //Affichage des rectangles entourant le menu
+        rectfill(motherShip.getBIT(0), ecartBords, ecartBords, SCREEN_W-ecartBords, SCREEN_H-ecartBords, makecol(127, 127, 127));
+        rectfill(motherShip.getBIT(0), ecartBords+30, ecartBords+30, SCREEN_W-ecartBords-30, SCREEN_H-ecartBords-30, makecol(204, 204, 204));
+
+        //Affichage du nom de l'aéroport
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(3), ecartBords+60, ecartBords+60, makecol(255, 255, 255), -1, convertisseurStringChar(m_nom));
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(7), SCREEN_W/2-420, ecartBords+85, makecol(255, 255, 255), -1, convertisseurStringChar(m_ville));
+
+        //Affichage des informations à gauche
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+180, makecol(255, 255, 255), -1, "Nombre de pistes : %d", m_nombre_pistes);
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+230, makecol(255, 255, 255), -1, "Nombre de places au sol : %d / %d", m_nombre_places_sol, m_nombre_places_sol);
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+280, makecol(255, 255, 255), -1, "Delai obligatoire d'attente");
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+315, makecol(255, 255, 255), -1, "au sol : %d UT", m_delai_attente_sol);
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+365, makecol(255, 255, 255), -1, "Temps d'acces aux pistes : %d UT", m_temps_acces_pistes);
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+415, makecol(255, 255, 255), -1, "Duree d'atterrissage / decollage : %d UT", m_temps_decollage_atterissage);
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+465, makecol(255, 255, 255), -1, "Attente a l'atterrissage : %d UT", m_duree_boucle_attente_vol);
+        //Affichage du curseur
+        affichageCurseur(motherShip.getBIT(3), motherShip.getBIT(0));
+
+        //Affichage du double buffer
+        blit(motherShip.getBIT(0), screen, 0, 0, 0, 0, motherShip.getBIT(0)->w, motherShip.getBIT(0)->h);
+
+        //SI la touche ESCAPE est pressée, on l'indique et on sort du menu
+        if(key[KEY_ESC] && indicEchap == false)
+        {
+            indicEchap = true;
+            finMenuAeroport = true;
+        }
+
+        //SI le clic gauche n'est plus pressé, on l'indique
+        if(!(mouse_b & 1) && indicClic == true)
+        {
+            indicClic = false;
+        }
+
+        //SI le bouton ESCAPE n'est plus pressé, on l'indique
+        if(!key[KEY_ESC] && indicEchap == true)
+        {
+            indicEchap = false;
+        }
+    }
 }

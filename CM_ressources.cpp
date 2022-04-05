@@ -45,7 +45,7 @@ Ressources::~Ressources()
 
     //Destruction de l'ensemble des BITMAPS de l'AVION
     cout << "     ----- Destruction de l'animation de l'AVION" << endl;
-    for(int i=0 ; i<12 ; i++)
+    for(int i=0 ; i<11 ; i++)
     {
         destroy_bitmap(m_animAvion[i]);
     }

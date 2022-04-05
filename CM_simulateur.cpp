@@ -115,12 +115,6 @@ void Simulateur::initSimulateur(int modeSimulation, int envergureSimulation)
         }
     }
 
-    for(int i=0 ; i<int(m_ensembleRoutes.size()) ; i++)
-    {
-        m_ensembleRoutes[i]->afficherInfos();
-    }
-
-
     //Chargement des modeles d'avions
     Avion court_courrier ("data/avion/court.txt");
     m_infos_types_avions.push_back(court_courrier);
@@ -183,10 +177,9 @@ Avion Simulateur::creer_avion_aleatoire()
     int modele_aleatoire = rand()%3; //Génération alétoire d'un entier entre 0 et 2 pour modèle
 
     bool autorisation = true; //Booléen d'autorisation pour l'immatriculation
-cout << "lancement" << endl;
+
     Avion nouvel_avion(m_infos_types_avions[choix_aleatoire]); //Construction par copie d'un nouvelle avion
 
-    cout << "creation OK" << endl;
     //Choix du modèle aléatoirement
     if(nouvel_avion.get_type_vol() == "court")
     {//court courrir
@@ -339,11 +332,18 @@ void Simulateur::charger_carte_EXTREME()
 //Méthode de déroulement général de la simulation
 void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool &done)
 {
-    bool finDeroulement = false;
-    bool indicEchap = false;
+    bool finDeroulement = false; //Indicateur de fin de déroulement de la simulation
+    bool indicEchap = false; //Indicateur permettant de savoir quand la touche ESCAPE est pressée
+    bool indicEspace = false; //Indicateur permettant de savoir quand la touche ESPACE est pressée
+    bool pause = false; //Indicateur de pause
+    int compteur = 0; //Permet d'actualiser à temps réguliers les avions et l'horloge
+    int modeVitesse = 0; //Permet de déterminer la vitesse d'actualisation
+    int coorXRectangleDroite = 1165; //Contient la position en X du rectangle de droite
 
     //Processus d'initialisation des cartes affichées en fond
     initCartesFond(motherShip);
+
+
 
     //Boucle de déroulement général de la partie
     while(!finDeroulement)
@@ -351,10 +351,23 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
         //Réinitialisation du double buffer
         clear_bitmap(motherShip.getBIT(0));
 
+        //SI aucune pause n'a lieu
+        if(!pause)
+        {
+            compteur++;
+            if((modeVitesse == 0 && compteur == 120) || (modeVitesse == 1 && compteur == 60) || (modeVitesse == 2 && compteur == 30))
+            {
+                compteur = 0;
+                //ACTUALISATION DES AVIONS
+                //ACTUALISATION DE L'HORLOGE
+                m_horlogeGMT.actualiser_heure();
+            }
+        }
+
         //cout << mouse_x << " et " << mouse_y << endl;
 
         //Affichage du mode JOUR ou NUIT
-        if(m_horlogeGMT.get_heure().first > 7 && m_horlogeGMT.get_heure().first < 20) //SI il s'agit du JOUR
+        if(m_horlogeGMT.get_heure().first > 6 && m_horlogeGMT.get_heure().first < 20) //SI il s'agit du JOUR
         {
             blit(motherShip.getBIT(6), motherShip.getBIT(0), 0, 0, 0, 0, motherShip.getBIT(6)->w, motherShip.getBIT(6)->h); //Affichage de la map monde JOUR
         }
@@ -366,6 +379,97 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
         //Affichage de l'horloge
         m_horlogeGMT.afficher_heure_date(motherShip.getBIT(0), motherShip.getFONT(6), motherShip.getFONT(5));
 
+        for(int i=0 ; i<int(m_aeroports.size()) ; i++)
+        {
+            m_aeroports[i].actualisationPointeurLocalisation(motherShip, indicClic, indicEchap);
+        }
+
+        //Affichage du rectangle de droite
+        rectfill(motherShip.getBIT(6), coorXRectangleDroite, 0, SCREEN_W, SCREEN_H, makecol(41, 49, 51));
+
+        //Affichage des boutons de déroulement temporel de la simulation
+        masked_stretch_blit(motherShip.getBIT(10), motherShip.getBIT(0), 0, 0, motherShip.getBIT(10)->w, motherShip.getBIT(10)->h, coorXRectangleDroite+20, 670, motherShip.getBIT(10)->w/7, motherShip.getBIT(10)->h/7);
+        masked_stretch_blit(motherShip.getBIT(12), motherShip.getBIT(0), 0, 0, motherShip.getBIT(12)->w, motherShip.getBIT(12)->h, coorXRectangleDroite+80, 668, motherShip.getBIT(12)->w/6, motherShip.getBIT(12)->h/6);
+        masked_stretch_blit(motherShip.getBIT(14), motherShip.getBIT(0), 0, 0, motherShip.getBIT(14)->w, motherShip.getBIT(14)->h, coorXRectangleDroite+140, 670, motherShip.getBIT(14)->w/4-5, motherShip.getBIT(14)->h/4-5);
+        masked_stretch_blit(motherShip.getBIT(16), motherShip.getBIT(0), 0, 0, motherShip.getBIT(16)->w, motherShip.getBIT(16)->h, coorXRectangleDroite+220, 670, motherShip.getBIT(16)->w/3-9, motherShip.getBIT(16)->h/3-9);
+
+        //SI la souris passe sur le bouton PAUSE
+        if(mouse_x >= 1188 && mouse_x <= 1224 && mouse_y >= 670 && mouse_y <= 720)
+        {
+            //SI clic gauche
+            if(mouse_b & 1 && indicClic == false)
+            {
+                indicClic = true;
+                pause = true; //Indication qu'il s'agit de la pause
+            }
+        }
+
+        //SINON SI la souris passe sur le bouton PLAY
+        else if(mouse_x >= 1250 && mouse_x <= 1286 && mouse_y >= 670 && mouse_y <= 720)
+        {
+            //SI clic gauche
+            if(mouse_b & 1 && indicClic == false)
+            {
+                indicClic = true;
+                pause = false; //Indication qu'il ne s'agit plus de la pause
+                modeVitesse = 0; //Indication qu'il s'agit du mode LENT
+                compteur = 0; //Réinitialisation du compteur pour éviter les bugs
+            }
+        }
+
+        //SINON SI la souris passe sur le bouton Speed 1
+        else if(mouse_x >= 1309 && mouse_x <= 1369 && mouse_y >= 670 && mouse_y <= 720)
+        {
+            //SI clic gauche
+            if(mouse_b & 1 && indicClic == false)
+            {
+                indicClic = true;
+                pause = false; //Indication qu'il ne s'agit plus de la pause
+                modeVitesse = 1; //Indication qu'il s'agit du mode MOYEN
+                compteur = 0; //Réinitialisation du compteur pour éviter les bugs
+            }
+        }
+
+        //SINON SI la souris passe sur le bouton Speed 2
+        else if(mouse_x >= 1386 && mouse_x <= 1472 && mouse_y >= 670 && mouse_y <= 720)
+        {
+            //SI clic gauche
+            if(mouse_b & 1 && indicClic == false)
+            {
+                indicClic = true;
+                pause = false; //Indication qu'il ne s'agit plus de la pause
+                modeVitesse = 2; //Indication qu'il s'agit du mode RAPIDE
+                compteur = 0; //Réinitialisation du compteur pour éviter les bugs
+            }
+        }
+
+        //Affichage du bouton actif
+        if(pause == true)
+        {
+            masked_stretch_blit(motherShip.getBIT(11), motherShip.getBIT(0), 0, 0, motherShip.getBIT(11)->w, motherShip.getBIT(11)->h, coorXRectangleDroite+20, 670, motherShip.getBIT(11)->w/7, motherShip.getBIT(11)->h/7);
+        }
+        else
+        {
+            if(modeVitesse == 0)
+            {
+                masked_stretch_blit(motherShip.getBIT(13), motherShip.getBIT(0), 0, 0, motherShip.getBIT(13)->w, motherShip.getBIT(13)->h, coorXRectangleDroite+80, 668, motherShip.getBIT(13)->w/6, motherShip.getBIT(13)->h/6);
+            }
+            else if(modeVitesse == 1)
+            {
+                masked_stretch_blit(motherShip.getBIT(15), motherShip.getBIT(0), 0, 0, motherShip.getBIT(15)->w, motherShip.getBIT(15)->h, coorXRectangleDroite+140, 670, motherShip.getBIT(15)->w/4-5, motherShip.getBIT(15)->h/4-5);
+            }
+            else
+            {
+                masked_stretch_blit(motherShip.getBIT(17), motherShip.getBIT(0), 0, 0, motherShip.getBIT(17)->w, motherShip.getBIT(17)->h, coorXRectangleDroite+220, 670, motherShip.getBIT(17)->w/3-9, motherShip.getBIT(17)->h/3-9);
+            }
+        }
+
+        if(key[KEY_SPACE] && indicEspace == false)
+        {
+            indicEspace = true;
+            pause = !pause;
+        }
+
         //SI l'utilisateur appuie sur ESC, lance le menu de sortie du jeu
         if(key[KEY_ESC] && indicEchap == false)
         {
@@ -373,10 +477,22 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
             menuESC(done, finDeroulement, indicClic, indicEchap, motherShip.getBIT(0), motherShip.getBIT(3), motherShip.getFONT(3), motherShip.getFONT(1));
         }
 
+        //SI le clic gauche n'est plus pressé, on l'indique
+        if(!(mouse_b & 1) && indicClic == true)
+        {
+            indicClic = false;
+        }
+
         //SI la touche ESCAPE n'est plus pressée
-        if(!key[KEY_ESC])
+        if(!key[KEY_ESC] && indicEchap == true)
         {
             indicEchap = false; //On l'indique
+        }
+
+        //SI la touche ESPACE n'est plus pressée
+        if(!key[KEY_SPACE] && indicEspace == true)
+        {
+            indicEspace = false; //On l'indique
         }
 
         //Affichage du curseur
@@ -385,6 +501,8 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
         //Affichage du double buffer
         blit(motherShip.getBIT(0), screen, 0, 0, 0, 0, motherShip.getBIT(0)->w, motherShip.getBIT(0)->h);
     }
+
+    m_horlogeGMT.sauvegarder_heure();
 }
 
 
@@ -487,6 +605,8 @@ void Simulateur::menuESC(bool &done, bool &finDeroulement, bool &indicClic, bool
 //Méthode d'initialisation des cartes mondiales en fonction des aéroports
 void Simulateur::initCartesFond(Ressources &motherShip)
 {
+    int coorXRectangleDroite = 1165; //Contient la position en X du rectangle de droite
+
     //Impression des cartes vierges
     blit(motherShip.getBIT(4), motherShip.getBIT(6), 0, 0, 0, 0, motherShip.getBIT(4)->w, motherShip.getBIT(4)->h);
     blit(motherShip.getBIT(5), motherShip.getBIT(7), 0, 0, 0, 0, motherShip.getBIT(5)->w, motherShip.getBIT(5)->h);
@@ -494,28 +614,135 @@ void Simulateur::initCartesFond(Ressources &motherShip)
     //Affichage de l'ensemble des routes aériennes
     for(int i=0 ; i<int(m_ensembleRoutes.size()) ; i++)
     {
-        //Routes aériennes de JOUR
-        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
-        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
-        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
-        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
-        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
-        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
-        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
-        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
-        line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+        //SI la route passe d'un bord de l'écran à l'autre
+        if((m_ensembleRoutes[i]->getAeroport(0)->get_nom() == "HNL" && m_ensembleRoutes[i]->getAeroport(1)->get_nom() == "HND")
+            || (m_ensembleRoutes[i]->getAeroport(0)->get_nom() == "HND" && m_ensembleRoutes[i]->getAeroport(1)->get_nom() == "HNL")
+            || (m_ensembleRoutes[i]->getAeroport(0)->get_nom() == "HNL" && m_ensembleRoutes[i]->getAeroport(1)->get_nom() == "WLG")
+            || (m_ensembleRoutes[i]->getAeroport(0)->get_nom() == "WLG" && m_ensembleRoutes[i]->getAeroport(1)->get_nom() == "HNL"))
+        {
+            //SI l'aéroport de "départ" est à gauche de l'écran et que son arrivée est à droite
+            if(m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x() < m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())
+            {
+                //Routes aériennes de JOUR
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
 
-        //Routes aériennes de NUIT
-        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
-        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
-        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
-        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
-        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
-        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
-        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
-        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
-        line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+
+                //Routes aériennes de NUIT
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+            }
+
+            //SINON SI l'aéaroport de "départ" est à droite de l'écran et que son arrivée est à gauche
+            else if(m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x() > m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())
+            {
+                //Routes aériennes de JOUR
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x())+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x())+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x())+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x())-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x())-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x())-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+
+                //Routes aériennes de NUIT
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, coorXRectangleDroite + m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x())+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x())+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x())+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x())-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x())-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), makecol(0, 0, 0));
+                line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, -(coorXRectangleDroite - m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x())-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+
+            }
+        }
+
+        //SINON la route peut être normalement représentée
+        else
+        {
+            //Routes aériennes de JOUR
+            line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+            line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+            line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+            line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+            line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+            line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+            line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+            line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+            line(motherShip.getBIT(6), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+
+            //Routes aériennes de NUIT
+            line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+            line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+            line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+            line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+            line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+            line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+            line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()+1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()+1, makecol(0, 0, 0));
+            line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y(), m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y(), makecol(0, 0, 0));
+            line(motherShip.getBIT(7), m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_y()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x()-1, m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_y()-1, makecol(0, 0, 0));
+        }
     }
+
+    //Affichage du rectangle de droite
+    rectfill(motherShip.getBIT(6), coorXRectangleDroite, 0, SCREEN_W, SCREEN_H, makecol(41, 49, 51));
 
     //Impression de l'ensemble des aéroports
     for(int i=0 ; i<int(m_aeroports.size()) ; i++)
@@ -523,28 +750,4 @@ void Simulateur::initCartesFond(Ressources &motherShip)
         masked_stretch_blit(motherShip.getBIT(8), motherShip.getBIT(6), 0, 0, motherShip.getBIT(8)->w, motherShip.getBIT(8)->h, m_aeroports[i].get_position().get_coord_x() - motherShip.getBIT(8)->w/4, m_aeroports[i].get_position().get_coord_y() - motherShip.getBIT(8)->h/2, motherShip.getBIT(8)->w/2, motherShip.getBIT(8)->h/2);
         masked_stretch_blit(motherShip.getBIT(8), motherShip.getBIT(7), 0, 0, motherShip.getBIT(8)->w, motherShip.getBIT(8)->h, m_aeroports[i].get_position().get_coord_x() - motherShip.getBIT(8)->w/4, m_aeroports[i].get_position().get_coord_y() - motherShip.getBIT(8)->h/2, motherShip.getBIT(8)->w/2, motherShip.getBIT(8)->h/2);
     }
-}
-
-
-//Methode d'enregistrement d'un crash
-void Simulateur::ajouter_crash(string modele_avion, string immatriculation, string depart, string arrivee, int anne, int mois, int jour, int heure, int minute)
-{
-    std::ofstream fichier;
-    fichier.open("data/historique_crash/historique_crash.txt", std::ofstream::app); //Ouverture du fichier en mode addition
-
-    if(!fichier)
-    {}
-    else
-    {//Si ouverture réussie
-        //Sauvegarde de la donnée
-        fichier << "Le " <<modele_avion << " du vol " << immatriculation << " au depart de " << depart << " a destination de " << arrivee << " le " << jour << "/" << mois << "/"  << anne << " a " << heure << "h" << minute << "\n";
-        fichier.close();
-    }
-
-}
-
-//Ouverture de l'historique de crash dasn le notepad
-void Simulateur::ouvrir_liste_crash() const
-{
-    system("start notepad \"data\\historique_crash\\historique_crash.txt\"");
 }
