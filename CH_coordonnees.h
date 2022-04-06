@@ -5,20 +5,20 @@
 class Coord
 {
     private :
-        int m_coord_x;
-        int m_coord_y;
+        float m_coord_x;
+        float m_coord_y;
 
     public :
         Coord();
-        Coord(int _coord_x, int _coord_y);
+        Coord(float _coord_x, float _coord_y);
 
         ~Coord();
 
-        int get_coord_x();
-        int get_coord_y();
+        float get_coord_x();
+        float get_coord_y();
 
-        void set_coord_x(int _x);
-        void set_coord_y(int _y);
+        void set_coord_x(float _x);
+        void set_coord_y(float _y);
 
         void afficher_coord();
 

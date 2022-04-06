@@ -40,11 +40,14 @@ class Simulateur
         void initSimulateur(int modeSimulation, int envergureSimulation);
         void reinitialisationSimulateur();
         void afficher_aeroports();
-        Avion creer_avion_aleatoire();
+        void creer_avion_aleatoire();
         void charger_carte_NORMALE();
         void charger_carte_EXTREME();
         void deroulementGlobal(Ressources &motherShip, bool &indicClic, bool &done);
         void menuESC(bool &done, bool &finDeroulement, bool &indicClic, bool &indicEchap, BITMAP* doubleBuffer, BITMAP* curseur, FONT* policeTitre, FONT* policeChoix);
+        void menuPrincipal(Ressources &motherShip, bool &indicClic, int &etat);
+        void menuAjoutAvion(Ressources &motherShip, bool &indicClic, int &etat);
+        void menuSupprimerAvion(Ressources &motherShip, bool &indicClic, int &etat);
         void initCartesFond(Ressources &motherShip);
 };
 

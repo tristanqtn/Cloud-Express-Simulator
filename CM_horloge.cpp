@@ -129,7 +129,7 @@ void Horloge::afficher_heure_date(BITMAP* doubleBuffer, FONT* policeHeure, FONT*
 void Horloge::actualiser_heure()
 {
     //Ajout d'une minute
-    m_heure.second += 10;
+    m_heure.second += UT;
 
     //SI 1 heure
     if(m_heure.second == 60)

@@ -90,6 +90,22 @@ void initTabBIT(vector<BITMAP*> &tabBIT)
             case 17 : //Bouton Speed 2 Actif
                 tabBIT[17] = load_bitmap("images/interface/boutonSpeed2Actif.bmp", NULL);
                 break;
+
+            case 18 : //Avion Court
+                tabBIT[18] = load_bitmap("images/avions/avionJaune/avionJauneDessus.bmp", NULL);
+                break;
+
+            case 19 : //Avion Moyen
+                tabBIT[19] = load_bitmap("images/avions/avionRouge/avionRougeDessus.bmp", NULL);
+                break;
+
+            case 20 : //Avion Long
+                tabBIT[20] = load_bitmap("images/avions/avionViolet/avionVioletDessus.bmp", NULL);
+                break;
+
+            case 21 : //Fond du menu des routes aériennes
+                tabBIT[21] = load_bitmap("images/interface/interfaceRouteAerienne.bmp", NULL);
+                break;
         }
 
         //Si le tableau est toujours vide, c'est qu'il y a eu une erreur
@@ -111,6 +127,19 @@ void initTabBIT(vector<BITMAP*> &tabBIT)
 6 : Carte monde JOUR AFFICHEE
 7 : Carte monde NUIT AFFICHEE
 8 : Pointeur de localisation
+9 : Pointeur de localisation ACTIF
+10 : Bouton Pause
+11 : Bouton Pause ACTIF
+12 : Bouton Play
+13 : Bouton Play ACTIF
+14 : Bouton Speed 1
+15 : Bouton Speed 1 ACTIF
+16 : Bouton Speed 2
+17 : Bouton Speed 2 ACTIF
+18 : Avion court
+19 : Avion moyen
+20 : Avion long
+21 : Fond du menu des routes aériennes
 */
 
 
@@ -161,6 +190,10 @@ void initTabFONT(vector<FONT*> &tabFONT)
             case 8 :
                 tabFONT[8] = load_font("polices/pixellari/pixellari_25.pcx", NULL, NULL);
                 break;
+
+            case 9 :
+                tabFONT[9] = load_font("polices/TOP GUN/TOP GUN_40.pcx", NULL, NULL);
+                break;
         }
 
         //Si le tableau est toujours vide, c'est qu'il y a eu une erreur
@@ -174,9 +207,12 @@ void initTabFONT(vector<FONT*> &tabFONT)
 // Références du tableau de FONTS
 /*
 Pixellari_20 : 2
+Pixellari_25 : 8
 Pixellari_38 : 0
 Pixellari_40 : 1
 
+TOP GUN_30 : 7
+TOP GUN_40 : 9
 TOP GUN_50 : 3
 
 Seven Segment_35 : 5

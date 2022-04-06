@@ -30,6 +30,8 @@ class RouteAerienne
         void initAeroports(Aeroport &aeroport1, Aeroport &aeroport2);
         void ajoutAvion(Avion &avionAAjouter);
         void afficherInfos();
+        void actualisationSurbrillanceRoute(Ressources &motherShip, bool &indicClic, bool &indicEchap);
+        void menuRouteAerienne(Ressources &motherShip, bool &indicEchap);
 };
 
 #endif // CH_ROUTEAERIENNE_H_INCLUDED

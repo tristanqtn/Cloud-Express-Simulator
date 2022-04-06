@@ -2,6 +2,7 @@
 #define HEADER_AEROPORT_H_INCLUDED
 
 #include "CH_coordonnees.h"
+#include "CH_ressources.h"
 
 #include <vector>
 #include <fstream>

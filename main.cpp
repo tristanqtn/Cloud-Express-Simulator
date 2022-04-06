@@ -26,23 +26,24 @@ int main()
     //Boucle de déroulement du programme
     do
     {
+        //Menu principal
         done = menuPrincipal(motherShip, indicClic, modeSimulation, envergureSimulation);
 
+        //SI le programme doit tourner
         if(!done)
         {
-
             //Création des informations néccessaires à la simulation
             proteus.initSimulateur(modeSimulation, envergureSimulation);
 
+            //Lancement de l'animation de l'avion
             motherShip.animationAvion(motherShip.getBIT(0));
 
-            //proteus.afficher_aeroports();
-
+            //Lancement du déroulement de la simulation
             proteus.deroulementGlobal(motherShip, indicClic, done);
         }
 
     }
-    while(!done);
+    while(!done); //Tant que le progrtamme n'est pas terminé
 
 
     //Suppression de l'ensemble des ressources du programme
