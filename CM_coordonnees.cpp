@@ -17,7 +17,7 @@ Coord::Coord()
 
 
 //Constructeur surchargé
-Coord::Coord(int _coord_x, int _coord_y)
+Coord::Coord(float _coord_x, float _coord_y)
     : m_coord_x(_coord_x), m_coord_y(_coord_y)
 {
 
@@ -37,25 +37,25 @@ Coord::~Coord()
     ////////////////
 
 //Getter de la coordonnée en X
-int Coord::get_coord_x()
+float Coord::get_coord_x()
 {
     return m_coord_x;
 }
 
 //Getter de la coordonnée en Y
-int Coord::get_coord_y()
+float Coord::get_coord_y()
 {
     return m_coord_y;
 }
 
 //Setter de la coordonnée en X
-void Coord::set_coord_x(int _x)
+void Coord::set_coord_x(float _x)
 {
     m_coord_x = _x;
 }
 
 //Setter de la coordonnée en Y
-void Coord::set_coord_y(int _y)
+void Coord::set_coord_y(float _y)
 {
     m_coord_y = _y;
 }

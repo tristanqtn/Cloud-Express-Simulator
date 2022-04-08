@@ -129,7 +129,7 @@ void Horloge::afficher_heure_date(BITMAP* doubleBuffer, FONT* policeHeure, FONT*
 void Horloge::actualiser_heure()
 {
     //Ajout d'une minute
-    m_heure.second++;
+    m_heure.second += UT;
 
     //SI 1 heure
     if(m_heure.second == 60)
@@ -194,12 +194,16 @@ void Horloge::sauvegarder_heure()
 {
     ofstream sauvegarde_horloge;
 
+    cout << " ----- SAUVEGARDE DE L'HORLOGE ----- " << endl;
+
     //Ouverture du fichier dédié à l'heure
+    cout << "     ----- Ouverture du fichier de l'horloge" << endl;
     sauvegarde_horloge.open("data/horloge/horloge.txt");
     if (sauvegarde_horloge.fail() )
         throw runtime_error("Probleme ouverture en ecriture de data/horloge/horloge.txt"); //Erreur de lecture
 
     //Sauvegarde de l'ensemble des informations de l'horloge
+    cout << "     ----- Sauvegarde des informations" << endl;
     sauvegarde_horloge << m_annee << "\n";
     sauvegarde_horloge << m_mois << "\n";
     sauvegarde_horloge << m_jour << "\n";
@@ -207,5 +211,8 @@ void Horloge::sauvegarder_heure()
     sauvegarde_horloge << m_heure.second << "\n";
 
     //Fermeture du fichier
+    cout << "     ----- Fermeture du fichier" << endl;
     sauvegarde_horloge.close();
+
+    cout << " ----- SAUVEGARDE TERMINEE ----- " << endl << endl;
 }
