@@ -4,9 +4,9 @@ using namespace std;
 
 
 
-    //////////////////////////////////
-    // CONSTRUCTEURS ET DESTRUCTEUR //
-    //////////////////////////////////
+//////////////////////////////////
+// CONSTRUCTEURS ET DESTRUCTEUR //
+//////////////////////////////////
 
 //Constructeur surchargé
 RouteAerienne::RouteAerienne(Aeroport aeroport1, Aeroport aeroport2, int longueur)
@@ -36,9 +36,9 @@ RouteAerienne::~RouteAerienne()
 
 
 
-    ////////////////
-    // ACCESSEURS //
-    ////////////////
+////////////////
+// ACCESSEURS //
+////////////////
 
 //Getter d'un des deux aéroports
 Aeroport* RouteAerienne::getAeroport(int indiceAeroport)
@@ -124,14 +124,14 @@ vector<vector<int>> RouteAerienne::getTabEtats()
 }
 
 
-    //////////////
-    // METHODES //
-    //////////////
+//////////////
+// METHODES //
+//////////////
 
 
-        ////////////////////////
-        // GESTION DES AVIONS //
-        ////////////////////////
+////////////////////////
+// GESTION DES AVIONS //
+////////////////////////
 
 //Méthode d'initialisation des aéroports
 void RouteAerienne::initAeroports(Aeroport &aeroport1, Aeroport &aeroport2)
@@ -160,9 +160,9 @@ void RouteAerienne::suppressionAvionRoute(int indiceAvion)
 
 
 
-        ////////////////
-        // AFFICHAGES //
-        ////////////////
+////////////////
+// AFFICHAGES //
+////////////////
 
 //Méthode d'affichage des informations
 void RouteAerienne::afficherInfos()
@@ -177,7 +177,7 @@ void RouteAerienne::actualisationSurbrillanceRoute(Ressources &motherShip, bool 
     float a = 0; //Coefficient directeur de la route aérienne
     float b = 0; //Constante de la route aérienne
     int intervalle = 8; //Intervalle de précision nécessaire pour cliquer sur l'arête
-    int coorXRectangleDroite = 1165;
+
 
     //Calcul des constantes de la fonction de la route
     a = ((float)getAeroport(1)->get_position().get_coord_y() - (float)getAeroport(0)->get_position().get_coord_y())/((float)getAeroport(1)->get_position().get_coord_x()-(float)getAeroport(0)->get_position().get_coord_x());
@@ -187,53 +187,19 @@ void RouteAerienne::actualisationSurbrillanceRoute(Ressources &motherShip, bool 
     if(mouse_y >= (a * mouse_x + b) - intervalle && mouse_y <= (a * mouse_x + b) + intervalle)
     {
         if((getAeroport(0)->get_position().get_coord_x() < getAeroport(1)->get_position().get_coord_x() && mouse_x >= getAeroport(0)->get_position().get_coord_x() && mouse_x <= getAeroport(1)->get_position().get_coord_x())
-            || (getAeroport(0)->get_position().get_coord_x() > getAeroport(1)->get_position().get_coord_x() && mouse_x >= getAeroport(1)->get_position().get_coord_x() && mouse_x <= getAeroport(0)->get_position().get_coord_x()))
+                || (getAeroport(0)->get_position().get_coord_x() > getAeroport(1)->get_position().get_coord_x() && mouse_x >= getAeroport(1)->get_position().get_coord_x() && mouse_x <= getAeroport(0)->get_position().get_coord_x()))
         {
-            //SI la route passe d'un bord de l'écran à l'autre
-            if((getAeroport(0)->get_nom() == "HNL" && getAeroport(1)->get_nom() == "HND")
-                || (getAeroport(0)->get_nom() == "HND" && getAeroport(1)->get_nom() == "HNL")
-                || (getAeroport(0)->get_nom() == "HNL" && getAeroport(1)->get_nom() == "WLG")
-                || (getAeroport(0)->get_nom() == "WLG" && getAeroport(1)->get_nom() == "HNL"))
-            {
-                //SI l'aéroport de "départ" est à gauche de l'écran et que son arrivée est à droite
-                if(getAeroport(0)->get_position().get_coord_x() < getAeroport(1)->get_position().get_coord_x())
-                {
-                    //Routes aériennes de JOUR
-                    line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x(), getAeroport(0)->get_position().get_coord_y(), -(coorXRectangleDroite - getAeroport(1)->get_position().get_coord_x()), getAeroport(1)->get_position().get_coord_y(), makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x(), getAeroport(0)->get_position().get_coord_y()-1, -(coorXRectangleDroite - getAeroport(1)->get_position().get_coord_x()), getAeroport(1)->get_position().get_coord_y()-1, makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y()-1, -(coorXRectangleDroite - getAeroport(1)->get_position().get_coord_x())+1, getAeroport(1)->get_position().get_coord_y()-1, makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y(), -(coorXRectangleDroite - getAeroport(1)->get_position().get_coord_x())+1, getAeroport(1)->get_position().get_coord_y(), makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y()+1, -(coorXRectangleDroite - getAeroport(1)->get_position().get_coord_x())+1, getAeroport(1)->get_position().get_coord_y()+1, makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x(), getAeroport(0)->get_position().get_coord_y()+1, -(coorXRectangleDroite - getAeroport(1)->get_position().get_coord_x()), getAeroport(1)->get_position().get_coord_y()+1, makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()-1, getAeroport(0)->get_position().get_coord_y()+1, -(coorXRectangleDroite - getAeroport(1)->get_position().get_coord_x())-1, getAeroport(1)->get_position().get_coord_y()+1, makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()-1, getAeroport(0)->get_position().get_coord_y(), -(coorXRectangleDroite - getAeroport(1)->get_position().get_coord_x())-1, getAeroport(1)->get_position().get_coord_y(), makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()-1, getAeroport(0)->get_position().get_coord_y()-1, -(coorXRectangleDroite - getAeroport(1)->get_position().get_coord_x())-1, getAeroport(1)->get_position().get_coord_y()-1, makecol(255, 0, 0));
 
-                    line(motherShip.getBIT(0), getAeroport(1)->get_position().get_coord_x(), getAeroport(1)->get_position().get_coord_y(), coorXRectangleDroite + getAeroport(0)->get_position().get_coord_x(), getAeroport(0)->get_position().get_coord_y(), makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(1)->get_position().get_coord_x(), getAeroport(1)->get_position().get_coord_y()-1, coorXRectangleDroite + getAeroport(0)->get_position().get_coord_x(), getAeroport(0)->get_position().get_coord_y()-1, makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(1)->get_position().get_coord_x()+1, getAeroport(1)->get_position().get_coord_y()-1, coorXRectangleDroite + getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y()-1, makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(1)->get_position().get_coord_x()+1, getAeroport(1)->get_position().get_coord_y(), coorXRectangleDroite + getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y(), makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(1)->get_position().get_coord_x()+1, getAeroport(1)->get_position().get_coord_y()+1, coorXRectangleDroite + getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y()+1, makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(1)->get_position().get_coord_x(), getAeroport(1)->get_position().get_coord_y()+1, coorXRectangleDroite + getAeroport(0)->get_position().get_coord_x(), getAeroport(0)->get_position().get_coord_y()+1, makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(1)->get_position().get_coord_x()-1, getAeroport(1)->get_position().get_coord_y()+1, coorXRectangleDroite + getAeroport(0)->get_position().get_coord_x()-1, getAeroport(0)->get_position().get_coord_y()+1, makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(1)->get_position().get_coord_x()-1, getAeroport(1)->get_position().get_coord_y(), coorXRectangleDroite + getAeroport(0)->get_position().get_coord_x()-1, getAeroport(0)->get_position().get_coord_y(), makecol(255, 0, 0));
-                    line(motherShip.getBIT(0), getAeroport(1)->get_position().get_coord_x()-1, getAeroport(1)->get_position().get_coord_y()-1, coorXRectangleDroite + getAeroport(0)->get_position().get_coord_x()-1, getAeroport(0)->get_position().get_coord_y()-1, makecol(255, 0, 0));
-                }
-            }
-            else
-            {
-                //On la surligne
-                line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x(), getAeroport(0)->get_position().get_coord_y(), getAeroport(1)->get_position().get_coord_x(), getAeroport(1)->get_position().get_coord_y(), makecol(255,0,0));
-                line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x(), getAeroport(0)->get_position().get_coord_y()-1, getAeroport(1)->get_position().get_coord_x(), getAeroport(1)->get_position().get_coord_y()-1, makecol(255,0,0));
-                line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y()-1, getAeroport(1)->get_position().get_coord_x()+1, getAeroport(1)->get_position().get_coord_y()-1, makecol(255,0,0));
-                line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y(), getAeroport(1)->get_position().get_coord_x()+1, getAeroport(1)->get_position().get_coord_y(), makecol(255,0,0));
-                line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y()+1, getAeroport(1)->get_position().get_coord_x()+1, getAeroport(1)->get_position().get_coord_y()+1, makecol(255,0,0));
-                line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y(), getAeroport(1)->get_position().get_coord_x()+1, getAeroport(1)->get_position().get_coord_y(), makecol(255,0,0));
-                line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()-1, getAeroport(0)->get_position().get_coord_y()-1, getAeroport(1)->get_position().get_coord_x()-1, getAeroport(1)->get_position().get_coord_y()-1, makecol(255,0,0));
-                line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()-1, getAeroport(0)->get_position().get_coord_y(), getAeroport(1)->get_position().get_coord_x()-1, getAeroport(1)->get_position().get_coord_y(), makecol(255,0,0));
-                line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()-1, getAeroport(0)->get_position().get_coord_y()-1, getAeroport(1)->get_position().get_coord_x()-1, getAeroport(1)->get_position().get_coord_y()-1, makecol(255,0,0));
-            }
-
+            //On la surligne
+            line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x(), getAeroport(0)->get_position().get_coord_y(), getAeroport(1)->get_position().get_coord_x(), getAeroport(1)->get_position().get_coord_y(), makecol(255,0,0));
+            line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x(), getAeroport(0)->get_position().get_coord_y()-1, getAeroport(1)->get_position().get_coord_x(), getAeroport(1)->get_position().get_coord_y()-1, makecol(255,0,0));
+            line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y()-1, getAeroport(1)->get_position().get_coord_x()+1, getAeroport(1)->get_position().get_coord_y()-1, makecol(255,0,0));
+            line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y(), getAeroport(1)->get_position().get_coord_x()+1, getAeroport(1)->get_position().get_coord_y(), makecol(255,0,0));
+            line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y()+1, getAeroport(1)->get_position().get_coord_x()+1, getAeroport(1)->get_position().get_coord_y()+1, makecol(255,0,0));
+            line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()+1, getAeroport(0)->get_position().get_coord_y(), getAeroport(1)->get_position().get_coord_x()+1, getAeroport(1)->get_position().get_coord_y(), makecol(255,0,0));
+            line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()-1, getAeroport(0)->get_position().get_coord_y()-1, getAeroport(1)->get_position().get_coord_x()-1, getAeroport(1)->get_position().get_coord_y()-1, makecol(255,0,0));
+            line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()-1, getAeroport(0)->get_position().get_coord_y(), getAeroport(1)->get_position().get_coord_x()-1, getAeroport(1)->get_position().get_coord_y(), makecol(255,0,0));
+            line(motherShip.getBIT(0), getAeroport(0)->get_position().get_coord_x()-1, getAeroport(0)->get_position().get_coord_y()-1, getAeroport(1)->get_position().get_coord_x()-1, getAeroport(1)->get_position().get_coord_y()-1, makecol(255,0,0));
 
             //SI clic sur l'arête, on va lancer l'affichage du menu de l'arête
             if(mouse_b & 1 && indicClic == false)
@@ -248,9 +214,9 @@ void RouteAerienne::actualisationSurbrillanceRoute(Ressources &motherShip, bool 
 
 
 
-        ///////////
-        // MENUS //
-        ///////////
+///////////
+// MENUS //
+///////////
 
 //Méthode d'affichage du menu de l'arête
 void RouteAerienne::menuRouteAerienne(Ressources &motherShip, bool &indicEchap)
@@ -295,20 +261,20 @@ void RouteAerienne::menuRouteAerienne(Ressources &motherShip, bool &indicEchap)
                 //Affichage adapté à l'état de la case
                 switch(m_etatRoute[i][j])
                 {
-                    case 0 : //Aucune anomalie
+                case 0 : //Aucune anomalie
 
-                        break;
+                    break;
 
-                    case 1 : //Pluie
-                        rectfill(motherShip.getBIT(0), 250+i*tailleColonne, 125+j*(500.0/12.0), 250+i*tailleColonne+tailleColonne, 125+j*(500.0/12.0)+(500.0/12.0), makecol(255, 0, 0));
-                        break;
+                case 1 : //Pluie
+                    rectfill(motherShip.getBIT(0), 250+i*tailleColonne, 125+j*(500.0/12.0), 250+i*tailleColonne+tailleColonne, 125+j*(500.0/12.0)+(500.0/12.0), makecol(255, 0, 0));
+                    break;
 
-                    case 2 : //Vents violents
-                        rectfill(motherShip.getBIT(0), 250+i*tailleColonne, 125+j*(500.0/12.0), 250+i*tailleColonne+tailleColonne, 125+j*(500.0/12.0)+(500.0/12.0), makecol(255, 255, 0));
-                        break;
+                case 2 : //Vents violents
+                    rectfill(motherShip.getBIT(0), 250+i*tailleColonne, 125+j*(500.0/12.0), 250+i*tailleColonne+tailleColonne, 125+j*(500.0/12.0)+(500.0/12.0), makecol(255, 255, 0));
+                    break;
 
-                    default : //Par défaut
-                        break;
+                default : //Par défaut
+                    break;
                 }
             }
         }

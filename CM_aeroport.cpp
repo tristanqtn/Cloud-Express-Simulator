@@ -896,7 +896,7 @@ void Aeroport::actualisationParking(vector<Aeroport> m_aeroports, int indiceAero
     int indiceDepart = -1; //Contient l'indice de l'aéroport de départ
     int indiceArrivee = -1; //Contient l'indice de l'aéroport d'arrivée du prochain sous-trajet
     int distance = -1;
-
+    bool recommencer = false;
     //On fait tourner l'algorithme tant que l'avion en front de la file du parking peut potentiellement accéder aux accès aux pistes
     while(int(m_avions_parking.size()) != 0 && m_avions_parking.front()->get_action_en_cours() == 0 && m_avions_parking.front()->get_duree_prepraration() == 0 && transitionPossible == true)
     {
@@ -942,6 +942,23 @@ void Aeroport::actualisationParking(vector<Aeroport> m_aeroports, int indiceAero
 
                     //On détermine le trajet le plus court grâce à DIJKSTRA
                     vecteur_escales = dijkstra(m_matrice_adjacence, int(m_aeroports.size()), indiceDepart, indiceArrivee);
+
+                    if(validite_dijkstra(m_aeroports[indiceDepart].get_distance_aeroports_preci(m_aeroports[vecteur_escales[0]].get_nom()), m_avions_parking.front()->get_type_vol()))
+                    {
+                        for(size_t s=0; s<vecteur_escales.size()-1;s++)
+                        {//Parcours du vecteur d'escales
+                            if(validite_dijkstra(m_aeroports[s].get_distance_aeroports_preci(m_aeroports[s+1].get_nom()), m_avions_parking.front()->get_type_vol())==false)
+                            {
+                              recommencer = true;
+                            }
+
+
+                        }
+                    }
+                    else
+                    {
+                        recommencer = true;
+                    }
                     m_avions_parking.front()->setListeEscales(vecteur_escales);
 
                     //On actualise le prochain aéroport
@@ -961,9 +978,9 @@ void Aeroport::actualisationParking(vector<Aeroport> m_aeroports, int indiceAero
                             }
                         }
                     }
+                cout << verifier_distance_chemin(m_avions_parking.front(), vecteur_escales, m_matrice_adjacence, distance) << endl;
                 }
-                while(verifier_distance_chemin(m_avions_parking.front(), vecteur_escales, m_matrice_adjacence, distance)==false);  //blindage distance / type de vol
-
+                while(verifier_distance_chemin(m_avions_parking.front(), vecteur_escales, m_matrice_adjacence, distance)==false && recommencer == true );  //blindage distance / type de vol
                 m_avions_parking.front()->set_liste_escales(get_nom()); //Ajout de l'aéroport de départ
                 for(size_t t=0; t<vecteur_escales.size(); t++)
                 {
@@ -1022,10 +1039,30 @@ void Aeroport::actualisationParking(vector<Aeroport> m_aeroports, int indiceAero
     }
 }
 
+
+bool Aeroport::validite_dijkstra(int distance, string type_vol)
+{
+    if(distance>0 && distance<= 3000 && type_vol == "court")
+    {
+        return true;
+    }
+    else if(distance > 3000 && distance <= 8000 && type_vol == "moyen")
+    {
+        return true;
+    }
+    else if(distance > 8000 && type_vol == "long")
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 bool Aeroport::verifier_distance_chemin (Avion * avion_utlise, vector<int> vecteur_escales, int **m_matrice_adjacence, int distance)
 {
     int distance_max = distance_maximale(vecteur_escales, m_matrice_adjacence, distance);
-
     if(distance_max>0 && distance_max<= 3000 && avion_utlise->get_type_vol() == "court")
     {
         return true;
@@ -1050,9 +1087,8 @@ int Aeroport::distance_maximale( vector<int> vecteur_escales, int **m_matrice_ad
     {
         int maxi =0;
 
-        for(int t=0; t<=int(vecteur_escales.size()-1); t++)
+        for(int t=0; t<int(vecteur_escales.size()-1); t++)
         {
-
             if(m_matrice_adjacence[vecteur_escales[t]][vecteur_escales[t+1]] > maxi)
             {
 
@@ -1092,11 +1128,11 @@ void Aeroport::ajoutAvionParking(Avion *nouvelAvion)
 string Aeroport::piocheAeroportAleatoire()
 {
     int valeur_aleatoire = 0;
-    do
-    {
+
+    //do
+    //{
         valeur_aleatoire = rand()%(int(m_distance_aeroports.size()));
-    }
-    while(m_distance_aeroports[valeur_aleatoire].second == -1);
+    //}while(m_distance_aeroports[valeur_aleatoire].second == -1);
 
     return m_distance_aeroports[valeur_aleatoire].first;
 }

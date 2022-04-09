@@ -414,11 +414,13 @@ void Avion::affichageAvionCarte(BITMAP* doubleBuffer, BITMAP* avionCourt, BITMAP
 
 
 //Méthode de mise en surbrillance des avions
-void Avion::actualisationSurbrillanceAvion(vector<Aeroport> m_aeroports, bool typeAffichage, int x, int y, BITMAP* doubleBuffer, BITMAP* overlay, BITMAP* overlayInverse, BITMAP* avionCourtSurligne, BITMAP* avionMoyenSurligne, BITMAP* avionLongSurligne, FONT* titre, FONT* texte, FONT* policeHeure)
+bool Avion::actualisationSurbrillanceAvion(vector<Aeroport> m_aeroports, bool typeAffichage, int x, int y, BITMAP* doubleBuffer, BITMAP* overlay, BITMAP* overlayInverse, BITMAP* avionCourtSurligne, BITMAP* avionMoyenSurligne, BITMAP* avionLongSurligne, FONT* titre, FONT* texte, FONT* policeHeure)
 {
     int indicSensAffichage = 0; //Contient l'information du sens d'affichage des informations de l'avion
     int coefficientReducteur = 2;
     int couleurTexte = makecol(255, 255, 255); //Contient la couleur des informations textuelles de l'overlay
+
+    bool rendu = false;
 
     //SI la souris passe sur l'avion
     if(mouse_x >= x - (avionCourtSurligne->w/4) && mouse_x <= x + 20 && mouse_y > y -(avionCourtSurligne->h/4) && mouse_y < y + 40)
@@ -456,6 +458,14 @@ void Avion::actualisationSurbrillanceAvion(vector<Aeroport> m_aeroports, bool ty
                 //L'overlay peut s'afficher normalement
                 indicSensAffichage = 1;
             }
+        }
+        if(key[KEY_S])
+        {
+            while(key[KEY_S])
+            {
+                rendu = true;
+            }
+
         }
     }
 
@@ -717,6 +727,7 @@ void Avion::actualisationSurbrillanceAvion(vector<Aeroport> m_aeroports, bool ty
         default :
             break;
     }
+    return rendu;
 }
 
 
@@ -1154,3 +1165,26 @@ void Avion::set_liste_escales(string escale)
 {
     m_liste_escales.push_back(escale);
 }
+
+
+
+void Avion::changementVitesse(int typeIntemperie)
+{
+    if(typeIntemperie == 1)// CAS PLUIE
+    {
+        m_vitesse = 500;
+    }
+    else //CAS VENTS VIOLENTS
+    {
+         m_vitesse = 400;
+    }
+
+    parametrer_nouveau_vol(m_coord.get_coord_x(),m_coord.get_coord_y(),m_coordArrivee.first,m_coordArrivee.second);
+    cout << "fin changement vitesse" << endl;
+}
+
+void Avion::set_vitesse(int vitesse)
+{
+    m_vitesse = vitesse;
+}
+

@@ -6,11 +6,11 @@
     // DECLARATION DES CONSTANTES //
     ////////////////////////////////
 
-#define NBRE_BITMAPS 37
+#define NBRE_BITMAPS 38
 #define NBRE_POLICES 11
 #define UT 10
-#define MAX_INTEMPERIES 5
-
+#define MAX_INTEMPERIES 20
+#define COORD_X_RECTANGLE_DROITE 1165
 
 
     ////////////////////////////////

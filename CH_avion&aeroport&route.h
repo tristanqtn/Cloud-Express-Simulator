@@ -161,7 +161,7 @@ class Avion
         void afficher_caracteristique();
         void afficher_caracteristique2();
         void affichageAvionCarte(BITMAP* doubleBuffer, BITMAP* avionCourt, BITMAP* avionMoyen, BITMAP* avionLong);
-        void actualisationSurbrillanceAvion(std::vector<Aeroport> m_aeroports, bool typeAffichage, int x, int y, BITMAP* doubleBuffer, BITMAP* overlay, BITMAP* overlayInverse, BITMAP* avionCourtSurligne, BITMAP* avionMoyenSurligne, BITMAP* avionLongSurligne, FONT* titre, FONT* texte, FONT* policeHeure);
+        bool actualisationSurbrillanceAvion(std::vector<Aeroport> m_aeroports, bool typeAffichage, int x, int y, BITMAP* doubleBuffer, BITMAP* overlay, BITMAP* overlayInverse, BITMAP* avionCourtSurligne, BITMAP* avionMoyenSurligne, BITMAP* avionLongSurligne, FONT* titre, FONT* texte, FONT* policeHeure);
 
         //Informations
         void passageAEscaleSuivante();
@@ -170,6 +170,10 @@ class Avion
         void actualisationPositionVol();
         void parametrer_nouveau_vol(float xD, float yD, float xA, float yA);
         void recuperationInfosAeroportA(Aeroport &aeroportArrivee);
+
+        void changementVitesse(int typeIntemperie);
+
+        void set_vitesse(int vitesse);
 };
 
 
@@ -277,7 +281,8 @@ class Aeroport
 
         int distance_maximale(std::vector<int> vecteur_escales, int **m_matrice_adjacence,int distance);
         bool verifier_distance_chemin (Avion * avion_utlise, std::vector<int> vecteur_escales, int **m_matrice_adjacence,int distance);
-
+                //Vérif
+        bool validite_dijkstra(int distance, std::string type_vol);
 };
 
 
@@ -328,6 +333,7 @@ class RouteAerienne
         //Affichages
         void afficherInfos();
         void actualisationSurbrillanceRoute(Ressources &motherShip, bool &indicClic, bool &indicEchap);
+
 
         //Menus
         void menuRouteAerienne(Ressources &motherShip, bool &indicEchap);

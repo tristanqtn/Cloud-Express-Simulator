@@ -166,6 +166,10 @@ void initTabBIT(vector<BITMAP*> &tabBIT)
             case 36 : //Avion long Profil Droite
                 tabBIT[36] = load_bitmap("images/avions/avionViolet/avionVioletProfilDroit.bmp", NULL);
                 break;
+
+            case 37 : //Avion long Profil Droite
+                tabBIT[37] = load_bitmap("images/interface/crash.bmp", NULL);
+                break;
         }
 
         //Si le tableau est toujours vide, c'est qu'il y a eu une erreur
