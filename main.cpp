@@ -1,13 +1,17 @@
 #include "H_header.h"
-#include "CH_avion.h"
+#include "CH_avion&aeroport&route.h"
 #include "CH_ressources.h"
 #include "CH_simulateur.h"
+#include <time.h>
 
 using namespace std;
 
 
 int main()
 {
+    //Permet les générations aléatoires
+    srand(time(NULL));
+
     //Initialisation d'Allegro
     initAllegro();
 
@@ -26,23 +30,24 @@ int main()
     //Boucle de déroulement du programme
     do
     {
+        //Menu principal
         done = menuPrincipal(motherShip, indicClic, modeSimulation, envergureSimulation);
 
+        //SI le programme doit tourner
         if(!done)
         {
-
             //Création des informations néccessaires à la simulation
             proteus.initSimulateur(modeSimulation, envergureSimulation);
 
+            //Lancement de l'animation de l'avion
             motherShip.animationAvion(motherShip.getBIT(0));
 
-            //proteus.afficher_aeroports();
-
+            //Lancement du déroulement de la simulation
             proteus.deroulementGlobal(motherShip, indicClic, done);
         }
 
     }
-    while(!done);
+    while(!done); //Tant que le progrtamme n'est pas terminé
 
 
     //Suppression de l'ensemble des ressources du programme

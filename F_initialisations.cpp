@@ -54,6 +54,122 @@ void initTabBIT(vector<BITMAP*> &tabBIT)
             case 8 : //Pointeur de localisation
                 tabBIT[8] = load_bitmap("images/interface/pointeurLocalisation.bmp", NULL);
                 break;
+
+            case 9 : //Pointeur de localisation actif
+                tabBIT[9] = load_bitmap("images/interface/pointeurLocalisationActif.bmp", NULL);
+                break;
+
+            case 10 : //Bouton Pause
+                tabBIT[10] = load_bitmap("images/interface/boutonPause.bmp", NULL);
+                break;
+
+            case 11 : //Bouton Pause Actif
+                tabBIT[11] = load_bitmap("images/interface/boutonPauseActif.bmp", NULL);
+                break;
+
+            case 12 : //Bouton Play
+                tabBIT[12] = load_bitmap("images/interface/boutonPlay.bmp", NULL);
+                break;
+
+            case 13 : //Bouton Play Actif
+                tabBIT[13] = load_bitmap("images/interface/boutonPlayActif.bmp", NULL);
+                break;
+
+            case 14 : //Bouton Speed 1
+                tabBIT[14] = load_bitmap("images/interface/boutonSpeed1.bmp", NULL);
+                break;
+
+            case 15 : //Bouton Speed 1 Actif
+                tabBIT[15] = load_bitmap("images/interface/boutonSpeed1Actif.bmp", NULL);
+                break;
+
+            case 16 : //Bouton Speed 2
+                tabBIT[16] = load_bitmap("images/interface/boutonSpeed2.bmp", NULL);
+                break;
+
+            case 17 : //Bouton Speed 2 Actif
+                tabBIT[17] = load_bitmap("images/interface/boutonSpeed2Actif.bmp", NULL);
+                break;
+
+            case 18 : //Avion Court
+                tabBIT[18] = load_bitmap("images/avions/avionJaune/avionJauneDessus.bmp", NULL);
+                break;
+
+            case 19 : //Avion Moyen
+                tabBIT[19] = load_bitmap("images/avions/avionRouge/avionRougeDessus.bmp", NULL);
+                break;
+
+            case 20 : //Avion Long
+                tabBIT[20] = load_bitmap("images/avions/avionViolet/avionVioletDessus.bmp", NULL);
+                break;
+
+            case 21 : //Fond du menu des routes aériennes
+                tabBIT[21] = load_bitmap("images/interface/interfaceRouteAerienne.bmp", NULL);
+                break;
+
+            case 22 : //Nuage
+                tabBIT[22] = load_bitmap("images/meteo/nuage.bmp", NULL);
+                break;
+
+            case 23 : //Orage
+                tabBIT[23] = load_bitmap("images/meteo/orage.bmp", NULL);
+                break;
+
+            case 24 : //Pluie
+                tabBIT[24] = load_bitmap("images/meteo/pluie.bmp", NULL);
+                break;
+
+            case 25 : //Vent
+                tabBIT[25] = load_bitmap("images/meteo/vent.bmp", NULL);
+                break;
+
+            case 26 : //Overlay des avions
+                tabBIT[26] = load_bitmap("images/interface/overlayAvion.bmp", NULL);
+                break;
+
+            case 27 : //Avion court ACTIF
+                tabBIT[27] = load_bitmap("images/avions/avionJaune/avionJauneDessusActif.bmp", NULL);
+                break;
+
+            case 28 : //Avion moyen ACTIF
+                tabBIT[28] = load_bitmap("images/avions/avionRouge/avionRougeDessusActif.bmp", NULL);
+                break;
+
+            case 29 : //Avion long ACTIF
+                tabBIT[29] = load_bitmap("images/avions/avionViolet/avionVioletDessusActif.bmp", NULL);
+                break;
+
+            case 30 : //Overlay des avions
+                tabBIT[30] = load_bitmap("images/interface/overlayAvionInverse.bmp", NULL);
+                break;
+
+            case 31 : //Avion court Profil Gauche
+                tabBIT[31] = load_bitmap("images/avions/avionJaune/avionJauneProfilGauche.bmp", NULL);
+                break;
+
+            case 32 : //Avion court Profil Droite
+                tabBIT[32] = load_bitmap("images/avions/avionJaune/avionJauneProfilDroit.bmp", NULL);
+                break;
+
+            case 33 : //Avion moyen Profil Gauche
+                tabBIT[33] = load_bitmap("images/avions/avionRouge/avionRougeProfilGauche.bmp", NULL);
+                break;
+
+            case 34 : //Avion moyen Profil Droite
+                tabBIT[34] = load_bitmap("images/avions/avionRouge/avionRougeProfilDroit.bmp", NULL);
+                break;
+
+            case 35 : //Avion long Profil Gauche
+                tabBIT[35] = load_bitmap("images/avions/avionViolet/avionVioletProfilGauche.bmp", NULL);
+                break;
+
+            case 36 : //Avion long Profil Droite
+                tabBIT[36] = load_bitmap("images/avions/avionViolet/avionVioletProfilDroit.bmp", NULL);
+                break;
+
+            case 37 : //Avion long Profil Droite
+                tabBIT[37] = load_bitmap("images/interface/crash.bmp", NULL);
+                break;
         }
 
         //Si le tableau est toujours vide, c'est qu'il y a eu une erreur
@@ -75,6 +191,25 @@ void initTabBIT(vector<BITMAP*> &tabBIT)
 6 : Carte monde JOUR AFFICHEE
 7 : Carte monde NUIT AFFICHEE
 8 : Pointeur de localisation
+9 : Pointeur de localisation ACTIF
+10 : Bouton Pause
+11 : Bouton Pause ACTIF
+12 : Bouton Play
+13 : Bouton Play ACTIF
+14 : Bouton Speed 1
+15 : Bouton Speed 1 ACTIF
+16 : Bouton Speed 2
+17 : Bouton Speed 2 ACTIF
+18 : Avion court
+19 : Avion moyen
+20 : Avion long
+21 : Fond du menu des routes aériennes
+22 : Nuage
+23 : Orage
+24 : Pluie
+25 : Vents violents
+26 : Overlay des avions
+27 : Avion Rouge actif
 */
 
 
@@ -117,6 +252,22 @@ void initTabFONT(vector<FONT*> &tabFONT)
             case 6 :
                 tabFONT[6] = load_font("polices/Seven Segment/Seven Segment_55.pcx", NULL, NULL);
                 break;
+
+            case 7 :
+                tabFONT[7] = load_font("polices/TOP GUN/TOP GUN_30.pcx", NULL, NULL);
+                break;
+
+            case 8 :
+                tabFONT[8] = load_font("polices/pixellari/pixellari_25.pcx", NULL, NULL);
+                break;
+
+            case 9 :
+                tabFONT[9] = load_font("polices/TOP GUN/TOP GUN_40.pcx", NULL, NULL);
+                break;
+
+            case 10 :
+                tabFONT[10] = load_font("polices/Seven Segment/Seven Segment_20.pcx", NULL, NULL);
+                break;
         }
 
         //Si le tableau est toujours vide, c'est qu'il y a eu une erreur
@@ -130,11 +281,15 @@ void initTabFONT(vector<FONT*> &tabFONT)
 // Références du tableau de FONTS
 /*
 Pixellari_20 : 2
+Pixellari_25 : 8
 Pixellari_38 : 0
 Pixellari_40 : 1
 
+TOP GUN_30 : 7
+TOP GUN_40 : 9
 TOP GUN_50 : 3
 
+Seven Segment_20 : 10
 Seven Segment_35 : 5
 Seven Segment_45 : 4
 Seven Segment_55 : 6
