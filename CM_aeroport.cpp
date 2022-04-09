@@ -964,6 +964,7 @@ void Aeroport::actualisationParking(vector<Aeroport> m_aeroports, int indiceAero
                 }
                 while(verifier_distance_chemin(m_avions_parking.front(), vecteur_escales, m_matrice_adjacence, distance)==false);  //blindage distance / type de vol
 
+                m_avions_parking.front()->set_liste_escales(get_nom()); //Ajout de l'aéroport de départ
                 for(size_t t=0; t<vecteur_escales.size(); t++)
                 {
                     m_avions_parking.front()->set_liste_escales(m_aeroports[vecteur_escales[t]].get_nom());

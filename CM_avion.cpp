@@ -1051,7 +1051,7 @@ bool Avion::consommer_kerosene()
     }
     else if(m_etat_reservoir == true)
     {//reservoir percé
-        consommation_UT = (m_consommation * m_vitesse)/300;
+        consommation_UT = (m_consommation * m_vitesse)/200;
     }
     m_quantite_kerosene = m_quantite_kerosene-consommation_UT;
 

@@ -314,7 +314,8 @@ class RouteAerienne
         void setLongueur(int longueur);
 
         void initTabEtats();
-
+        std::vector<std::vector<int>> getTabEtats();
+        void actualiserCase(int indiceX, int indiceY, int valeur);
         void supprimer_avion(std::string immatriculation);
 
         //Méthodes

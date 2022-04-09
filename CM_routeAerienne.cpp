@@ -113,6 +113,16 @@ void RouteAerienne::initTabEtats()
 }
 
 
+void RouteAerienne::actualiserCase(int indiceX, int indiceY, int valeur)
+{
+    m_etatRoute[indiceX][indiceY] = valeur;
+}
+
+vector<vector<int>> RouteAerienne::getTabEtats()
+{
+    return m_etatRoute;
+}
+
 
     //////////////
     // METHODES //
@@ -286,13 +296,18 @@ void RouteAerienne::menuRouteAerienne(Ressources &motherShip, bool &indicEchap)
                 switch(m_etatRoute[i][j])
                 {
                     case 0 : //Aucune anomalie
+
+                        break;
+
+                    case 1 : //Pluie
                         rectfill(motherShip.getBIT(0), 250+i*tailleColonne, 125+j*(500.0/12.0), 250+i*tailleColonne+tailleColonne, 125+j*(500.0/12.0)+(500.0/12.0), makecol(255, 0, 0));
                         break;
 
-                    case 1 : //Vents violents
+                    case 2 : //Vents violents
+                        rectfill(motherShip.getBIT(0), 250+i*tailleColonne, 125+j*(500.0/12.0), 250+i*tailleColonne+tailleColonne, 125+j*(500.0/12.0)+(500.0/12.0), makecol(255, 255, 0));
                         break;
 
-                    case 2 : //Pluie
+                    default : //Par défaut
                         break;
                 }
             }
@@ -308,26 +323,9 @@ void RouteAerienne::menuRouteAerienne(Ressources &motherShip, bool &indicEchap)
         for(float i = 125 ; i <= 525+500.0/12.0 ; i += 500.0/12.0)
         {
             rect(motherShip.getBIT(0), 250, i,1250, i+500.0/12.0,makecol(41,49,51));
-            textprintf_right_ex(motherShip.getBIT(0), motherShip.getFONT(8), 200, 720-(i+9), makecol(255,255,255), -1, "%d", int(5000+((i-125)/(500.0/12.0))*750));
+            //textprintf_right_ex(motherShip.getBIT(0), motherShip.getFONT(8), 200, 720-(i+9), makecol(255,255,255), -1, "%d", int(5000+((i-125)/(500.0/12.0))*750));
         }
 
-        //Affichage des altitudes
-        for(int i = 100 ; i <= 600 ; i += 100)
-        {
-            //textprintf_right_ex(motherShip.getBIT(0), motherShip.getFONT(8), 200, 720-(i+20), makecol(255,255,255), -1, "%d",((i-100)/100)*2500);
-        }
-
-        //Affichage des distances
-        for(int i = 250 ; i <= 1250 ; i += tailleColonne)
-        {
-            if(compteur%((int)nbColonnes/5)== 0)
-            {
-                compteur = 0 ;
-                textprintf_right_ex(motherShip.getBIT(0), motherShip.getFONT(8), i,640, makecol(255,255,255), -1, "%d",distance);
-            }
-            distance += distanceColonne;
-            compteur ++;
-        }
 
         //Boucle de parcours de l'ensemble des avions présents sur la route aérienne
         for(int i=0 ; i<int(m_avionsPresents.size()) ; i++)
@@ -374,6 +372,31 @@ void RouteAerienne::menuRouteAerienne(Ressources &motherShip, bool &indicEchap)
                 }
             }
         }
+
+        //Affichage de rectangles sur les côtés afin d'éviter les trucs moches possibles et imaginables
+        rectfill(motherShip.getBIT(0), 0, 0, 250, SCREEN_H, makecol(41,49,51));
+        rectfill(motherShip.getBIT(0), 1250, 0, SCREEN_W, SCREEN_H, makecol(41,49,51));
+
+
+        //Affichage des lignes
+        for(float i = 125 ; i <= 525+2*500.0/12.0 ; i += 500.0/12.0)
+        {
+            textprintf_right_ex(motherShip.getBIT(0), motherShip.getFONT(8), 200, 720-(i+9), makecol(255,255,255), -1, "%d", int(5750+((i-125)/(500.0/12.0))*750));
+        }
+
+        //Affichage des distances
+        for(int i = 250 ; i <= 1250 ; i += tailleColonne)
+        {
+            if(compteur%((int)nbColonnes/5)== 0)
+            {
+                compteur = 0 ;
+                textprintf_right_ex(motherShip.getBIT(0), motherShip.getFONT(8), i,640, makecol(255,255,255), -1, "%d",distance);
+            }
+            distance += distanceColonne;
+            compteur ++;
+        }
+
+
 
         //blit(motherShip.getBIT(31), motherShip.getBIT(0), 0, 0, 10, 100, motherShip.getBIT(31)->w, motherShip.getBIT(31)->h);
 
