@@ -74,6 +74,31 @@ pair <int, int> Horloge::get_heure()
     return m_heure;
 }
 
+//Setter du jour
+void Horloge::set_jour(int jour)
+{
+    m_jour = jour;
+}
+
+//Setter du mois
+void Horloge::set_mois(int mois)
+{
+    m_mois = mois;
+}
+
+//Setter de l'année
+void Horloge::set_annee(int annee)
+{
+    m_annee = annee;
+}
+
+//Setter de l'heure
+void Horloge::set_heure(int heure, int minute)
+{
+    m_heure.first = heure;
+    m_heure.second = minute;
+}
+
 
 
     //////////////
@@ -186,6 +211,50 @@ void Horloge::actualiser_heure()
             }
         }
     }
+}
+
+
+//Méthode d'affichage de l'heure dans l'overlay de l'avion
+void Horloge::affichageOverlayAvion(int x, int y, FONT* police, BITMAP* doubleBuffer)
+{
+    string chaineCarHeure = ""; //Chaîne de caractères contenant l'heure GMT
+    string chaineCarDate = ""; //Chaîne de caractères contenant la date GMT
+
+    //Création de la chaîne correspondant à l'heure
+    if(m_heure.first < 10) //SI heure < 10 alors on rajoute un 0
+    {
+        chaineCarHeure += "0";
+    }
+    chaineCarHeure += to_string(m_heure.first); //Ajout de l'heure
+    chaineCarHeure += ":";
+    if(m_heure.second < 10) //SI minute < 10, alors on rajoute un 0
+    {
+        chaineCarHeure += "0";
+    }
+    chaineCarHeure += to_string(m_heure.second); //Ajout des minutes
+
+    //Création de la chaîne correspondant à la date
+    if(m_jour < 10) //SI le jour < 10, on rajoute un 0
+    {
+        chaineCarDate += "0";
+    }
+    chaineCarDate += to_string(m_jour); //Ajout du jour
+    chaineCarDate += "/";
+    if(m_mois < 10)
+    {
+        chaineCarDate += "0";
+    }
+    chaineCarDate += to_string(m_mois); //Ajout du mois
+    chaineCarDate += "/";
+    if(m_annee < 10)
+    {
+        chaineCarDate += "0";
+    }
+    chaineCarDate += to_string(m_annee); //Ajout de l'année
+
+    //Mise en page Allegro
+    textprintf_centre_ex(doubleBuffer, police, x, y, makecol(255, 255, 255), -1, "Depart : %s", convertisseurStringChar(chaineCarDate));
+    textprintf_centre_ex(doubleBuffer, police, x, y+25, makecol(255, 255, 255), -1, "A : %s", convertisseurStringChar(chaineCarHeure));
 }
 
 

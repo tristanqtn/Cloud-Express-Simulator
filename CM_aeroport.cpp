@@ -1,5 +1,5 @@
 #include "H_header.h"
-#include "CH_avion&aeroport.h"
+#include "CH_avion&aeroport&route.h"
 #include "CH_coordonnees.h"
 #include <algorithm>
 
@@ -7,9 +7,9 @@ using namespace std;
 
 
 
-    //////////////////////////////////
-    // CONSTRUCTEURS ET DESTRUCTEUR //
-    //////////////////////////////////
+//////////////////////////////////
+// CONSTRUCTEURS ET DESTRUCTEUR //
+//////////////////////////////////
 
 // Constructeur surchargé
 Aeroport::Aeroport(string nom_fichier, int nombre_aeroport)
@@ -121,9 +121,9 @@ Aeroport::~Aeroport()
 
 
 
-    ////////////////
-    // ACCESSEURS //
-    ////////////////
+////////////////
+// ACCESSEURS //
+////////////////
 
 
 //Getter du nombre de pistes
@@ -217,6 +217,23 @@ vector<vector<Avion*>> Aeroport::getPistes()
     return m_pistes;
 }
 
+//Getter d'un successeur précis de l'aéroport
+pair<string, int> Aeroport::get_successeur_precis(int i)
+{
+    return m_distance_aeroports[i];
+}
+
+int Aeroport::getAltitudesAvions(int i)
+{
+    return m_altitudesAvions[i];
+}
+
+
+
+void Aeroport::setAltitudeAvions(int valeur)
+{
+    m_altitudesAvions.push_back(valeur);
+}
 
 
     //////////////
@@ -257,7 +274,7 @@ void Aeroport::afficher_caracteristique(int nombre_aeroport)
 
 
 //Méthode d'actualisation du pointeur de localisation de l'aéroport
-void Aeroport::actualisationPointeurLocalisation(Ressources &motherShip, bool &indicClic, bool &indicEchap)
+void Aeroport::actualisationPointeurLocalisation(Ressources &motherShip, vector<Aeroport> m_aeroports, bool &indicClic, bool &indicEchap)
 {
     //SI la souris passe sur le pointeur
     if(mouse_x >= get_position().get_coord_x() - motherShip.getBIT(9)->w/4 && mouse_x <= get_position().get_coord_x() + motherShip.getBIT(9)->w/4 && mouse_y >= get_position().get_coord_y() - motherShip.getBIT(9)->h/2 && mouse_y <= get_position().get_coord_y())
@@ -269,16 +286,18 @@ void Aeroport::actualisationPointeurLocalisation(Ressources &motherShip, bool &i
         if(mouse_b & 1 && indicClic == false)
         {
             //Lancement du menu Aéroport
-            menuAeroport(motherShip, indicClic, indicEchap);
+            menuAeroport(motherShip, m_aeroports, indicClic, indicEchap);
         }
     }
 }
 
 
 //Méthode du menu de l'aéroport
-void Aeroport::menuAeroport(Ressources &motherShip, bool &indicClic, bool &indicEchap)
+void Aeroport::menuAeroport(Ressources &motherShip, vector<Aeroport> m_aeroports, bool &indicClic, bool &indicEchap)
 {
     int ecartBords = 100;
+    int ecartInfosAvions = 75;
+    int decalageAvions = 40;
     bool finMenuAeroport = false; //Indicateur de fin du menu Aéroport
     BITMAP* doubleBufferProvisoire = create_bitmap(SCREEN_W, SCREEN_H); //Permet d'avoir le fond du menu
 
@@ -303,12 +322,91 @@ void Aeroport::menuAeroport(Ressources &motherShip, bool &indicClic, bool &indic
 
         //Affichage des informations à gauche
         textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+180, makecol(255, 255, 255), -1, "Nombre de pistes : %d", m_nombre_pistes);
-        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+230, makecol(255, 255, 255), -1, "Nombre de places au sol : %d / %d", m_nombre_places_sol, m_nombre_places_sol);
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+230, makecol(255, 255, 255), -1, "Nombre de places au sol : %d / %d", m_nombre_places_sol-int(m_avions_parking.size()), m_nombre_places_sol);
         textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+280, makecol(255, 255, 255), -1, "Delai obligatoire d'attente");
         textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+315, makecol(255, 255, 255), -1, "au sol : %d UT", m_delai_attente_sol);
         textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+365, makecol(255, 255, 255), -1, "Temps d'acces aux pistes : %d UT", m_temps_acces_pistes);
         textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+415, makecol(255, 255, 255), -1, "Duree d'atterrissage / decollage : %d UT", m_temps_decollage_atterissage);
         textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+60, ecartBords+465, makecol(255, 255, 255), -1, "Attente a l'atterrissage : %d UT", m_duree_boucle_attente_vol);
+
+        //Affichage des informations du parking
+        if(int(m_avions_parking.size()) > 0) //SI le parking n'est pas vide
+        {
+            textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+700, ecartBords+80, makecol(255, 255, 255), -1, "Parking : ");
+        }
+        else //SINON, le parking est vide
+        {
+            textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+700, ecartBords+80, makecol(255, 255, 255), -1, "Parking : Vide");
+        }
+
+        //Parcours de l'ensemble des pistes afin d'afficher leurs informations
+        for(int i=0 ; i<int(m_pistes.size()) ; i++)
+        {
+            //SI la piste contient des avions
+            if(int(m_pistes[i].size()) >= 1 && m_pistes[i][0] != nullptr)
+            {
+                textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+700, ecartBords+80 + (i+1)*ecartInfosAvions, makecol(255, 255, 255), -1, "Piste %d : ", i+1);
+            }
+            //SINON SI la piste ne contient pas d'avions
+            else if(int(m_pistes[i].size()) == 1 && m_pistes[i][0] == nullptr)
+            {
+                textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), ecartBords+700, ecartBords+80 + (i+1)*ecartInfosAvions, makecol(255, 255, 255), -1, "Piste %d : Vide", i+1);
+            }
+        }
+
+        //Boucle de parcours des avions dans le parking afin de les afficher
+        for(int i=0 ; i<int(m_avions_parking.size()) ; i++)
+        {
+            //SI l'avion est un court courrier
+            if(m_avions_parking[i]->get_type_vol() == "court")
+            {
+                rotate_scaled_sprite(motherShip.getBIT(0), motherShip.getBIT(18), ecartBords+850 + i*decalageAvions, ecartBords+75,ftofix(0),ftofix(0.5));
+            }
+            //SINON SI il s'agit d'un moyen courrier
+            else if(m_avions_parking[i]->get_type_vol() == "moyen")
+            {
+                rotate_scaled_sprite(motherShip.getBIT(0), motherShip.getBIT(19), ecartBords+850 + i*decalageAvions, ecartBords+75,ftofix(0),ftofix(0.5));
+            }
+            //SINON SI il s'agit d'un long courrier
+            else if(m_avions_parking[i]->get_type_vol() == "long")
+            {
+                rotate_scaled_sprite(motherShip.getBIT(0), motherShip.getBIT(20), ecartBords+850 + i*decalageAvions, ecartBords+75,ftofix(0),ftofix(0.5));
+            }
+
+            //Affichage des informations de l'avion
+            m_avions_parking[i]->actualisationSurbrillanceAvion(m_aeroports, false, ecartBords+850 + i*decalageAvions + 21, ecartBords+75+21,motherShip.getBIT(0), motherShip.getBIT(26), motherShip.getBIT(30), motherShip.getBIT(27), motherShip.getBIT(28), motherShip.getBIT(29), motherShip.getFONT(7), motherShip.getFONT(2), motherShip.getFONT(10));
+        }
+
+        //Boucle de parcours de l'ensemble des pistes afin d'afficher les informations des avions
+        for(int i=0 ; i<int(m_pistes.size()) ; i++)
+        {
+            //SI la piste contient des avions
+            if(int(m_pistes[i].size()) >= 1 && m_pistes[i][0] != nullptr)
+            {
+                for(int j=0 ; j<int(m_pistes[i].size()) ; j++)
+                {
+                    //SI l'avion est un court courrier
+                    if(m_pistes[i][j]->get_type_vol() == "court")
+                    {
+                        rotate_scaled_sprite(motherShip.getBIT(0), motherShip.getBIT(18), ecartBords+850 + i*decalageAvions, ecartBords+75+(i+1)*ecartInfosAvions,ftofix(0),ftofix(0.5));
+                    }
+                    //SINON SI il s'agit d'un moyen courrier
+                    else if(m_pistes[i][j]->get_type_vol() == "moyen")
+                    {
+                        rotate_scaled_sprite(motherShip.getBIT(0), motherShip.getBIT(19), ecartBords+850 + i*decalageAvions, ecartBords+75+(i+1)*ecartInfosAvions,ftofix(0),ftofix(0.5));
+                    }
+                    //SINON SI il s'agit d'un long courrier
+                    else if(m_pistes[i][j]->get_type_vol() == "long")
+                    {
+                        rotate_scaled_sprite(motherShip.getBIT(0), motherShip.getBIT(20), ecartBords+850 + i*decalageAvions, ecartBords+75+(i+1)*ecartInfosAvions,ftofix(0),ftofix(0.5));
+                    }
+
+                    //Affichage des informations de l'avion
+                    m_pistes[i][j]->actualisationSurbrillanceAvion(m_aeroports, false, ecartBords+850 + i*decalageAvions + 21, ecartBords+75*i+21,motherShip.getBIT(0), motherShip.getBIT(26), motherShip.getBIT(30), motherShip.getBIT(27), motherShip.getBIT(28), motherShip.getBIT(29), motherShip.getFONT(7), motherShip.getFONT(2), motherShip.getFONT(10));
+                }
+            }
+        }
+
         //Affichage du curseur
         affichageCurseur(motherShip.getBIT(3), motherShip.getBIT(0));
 
@@ -338,14 +436,14 @@ void Aeroport::menuAeroport(Ressources &motherShip, bool &indicClic, bool &indic
 
 
 
-        ///////////////////////////
-        // GESTION DE L'AEROPORT //
-        ///////////////////////////
+///////////////////////////
+// GESTION DE L'AEROPORT //
+///////////////////////////
 
 // Méthode d'ajout d'un aéroport dans la base de connexion d'un aéroport source
 void Aeroport::ajouter_aeroport_connecte(string nom_aeroport, int distance)
 {
-    pair <string , int> tempo; //Contient temporairement la paire de données
+    pair <string, int> tempo;  //Contient temporairement la paire de données
 
     //Récupération des données et affectation dans la paire
     tempo.first = nom_aeroport;
@@ -357,12 +455,12 @@ void Aeroport::ajouter_aeroport_connecte(string nom_aeroport, int distance)
 
 
 
-        ////////////////////////
-        // GESTION DES AVIONS //
-        ////////////////////////
+////////////////////////
+// GESTION DES AVIONS //
+////////////////////////
 
 //Méthode d'actualisation de l'ensemble des files d'avions de l'aéroport
-void Aeroport::actualisationAeroport(vector<Aeroport> m_aeroports, vector<RouteAerienne*> &m_ensembleRoutes, int indiceAeroport, int** m_matrice_adjacence)
+void Aeroport::actualisationAeroport(vector<Aeroport> m_aeroports, vector<RouteAerienne*> &m_ensembleRoutes, int indiceAeroport, int** m_matrice_adjacence, Horloge heureActuelle)
 {
     //Actualisation des pistes
     actualisationPistes(m_ensembleRoutes);
@@ -377,7 +475,7 @@ void Aeroport::actualisationAeroport(vector<Aeroport> m_aeroports, vector<RouteA
     actualisationBoucleAttente(m_ensembleRoutes);
 
     //Actualisation du parking
-    actualisationParking(m_aeroports, indiceAeroport, m_matrice_adjacence);
+    actualisationParking(m_aeroports, indiceAeroport, m_matrice_adjacence, heureActuelle);
 }
 
 
@@ -474,8 +572,6 @@ void Aeroport::actualisationBoucleAttente(vector<RouteAerienne*> &m_ensembleRout
         }
     }
 
-    cout << "reussi" << endl << endl;
-
 
 
     //ACTUALISATION DES ENTREES EN BOUCLE D'ATTENTE
@@ -495,7 +591,6 @@ void Aeroport::actualisationBoucleAttente(vector<RouteAerienne*> &m_ensembleRout
                     //SI la boucle d'attente n'est pas vide
                     if(int(m_queue_boucle_attente.size()) != 0)
                     {
-                        cout << "TAILLE : " << int(m_queue_boucle_attente.size()) << endl;
                         //SI le dernier avion dans la boucle a bien un UT de décalage par rapport au potentiel nouvel avion
                         if(m_queue_boucle_attente.back()->get_duree_boucle_attente() <= m_ensembleRoute[k]->getAvionsPresents()[i]->get_duree_boucle_attente()-2)
                         {
@@ -506,7 +601,6 @@ void Aeroport::actualisationBoucleAttente(vector<RouteAerienne*> &m_ensembleRout
                     //SINON, la file est vide
                     else
                     {
-                        cout << "TAILLE NULLE" << endl;
                         //On indique que l'avion peut donc rentrer
                         indicEntreePossible = true;
                     }
@@ -612,7 +706,7 @@ void Aeroport::actualisationPistes(vector<RouteAerienne*> &m_ensembleRoutes)
                     {
                         //SI on la trouve (la route)
                         if((m_ensembleRoutes[k]->getAeroport(0)->get_nom() == m_pistes[i][j]->getNomAeroportD() && m_ensembleRoutes[k]->getAeroport(1)->get_nom() == m_pistes[i][j]->getNomAeroportA())
-                          || (m_ensembleRoutes[k]->getAeroport(0)->get_nom() == m_pistes[i][j]->getNomAeroportA() && m_ensembleRoutes[k]->getAeroport(1)->get_nom() == m_pistes[i][j]->getNomAeroportD()))
+                                || (m_ensembleRoutes[k]->getAeroport(0)->get_nom() == m_pistes[i][j]->getNomAeroportA() && m_ensembleRoutes[k]->getAeroport(1)->get_nom() == m_pistes[i][j]->getNomAeroportD()))
                         {
                             //Actualisation de l'indice de la route correpondant au trajet de l'avion
                             indiceRoute = k;
@@ -793,14 +887,15 @@ void Aeroport::actualisationAccesPistes()
 
 
 //Méthode d'actualisation du parking
-void Aeroport::actualisationParking(vector<Aeroport> m_aeroports, int indiceAeroport, int** m_matrice_adjacence)
+void Aeroport::actualisationParking(vector<Aeroport> m_aeroports, int indiceAeroport, int** m_matrice_adjacence, Horloge heureActuelle)
 {
+    vector<int> vecteur_escales;
     bool transitionPossible = true;
     //int indiceProchaineDestination = -1; //Contient l'indice de la prochaine destination (aéroport)
     string prochaineDestination = ""; //Va contenir la prochaine destination
     int indiceDepart = -1; //Contient l'indice de l'aéroport de départ
     int indiceArrivee = -1; //Contient l'indice de l'aéroport d'arrivée du prochain sous-trajet
-
+    int distance = -1;
 
     //On fait tourner l'algorithme tant que l'avion en front de la file du parking peut potentiellement accéder aux accès aux pistes
     while(int(m_avions_parking.size()) != 0 && m_avions_parking.front()->get_action_en_cours() == 0 && m_avions_parking.front()->get_duree_prepraration() == 0 && transitionPossible == true)
@@ -816,33 +911,63 @@ void Aeroport::actualisationParking(vector<Aeroport> m_aeroports, int indiceAero
             //SI l'avion a fini son trajet précédent, DIJKSTRA
             if(int(m_avions_parking.front()->getTousIndicesEscales().size()) <= 1)
             {
-                //Récupération d'un aéroport de destination
-                prochaineDestination = piocheAeroportAleatoire();
-
-                cout << "NOUVELLE DESTINATION : " << prochaineDestination << endl;
-
-                //On parcourt les aéroports afin de trouver l'indice de l'aéroport de départ ainsi que celui d'arrivée
-                for(int i=0 ; i<int(m_aeroports.size()) ; i++)
+                do
                 {
-                    //SI le nom de l'aéroport est celui de l'aéroport de départ
-                    if(m_aeroports[i].get_nom() == get_nom())
+                    //Récupération d'un aéroport de destination
+                    prochaineDestination = piocheAeroportAleatoire();
+
+                    cout << endl << "DEPART : " << get_nom() << endl;
+                    cout << "NOUVELLE DESTINATION : " << prochaineDestination << endl;
+
+                    //On parcourt les aéroports afin de trouver l'indice de l'aéroport de départ ainsi que celui d'arrivée
+                    for(int i=0 ; i<int(m_aeroports.size()) ; i++)
                     {
-                        //On récupère son indice
-                        indiceDepart = i;
+                        //SI le nom de l'aéroport est celui de l'aéroport de départ
+                        if(m_aeroports[i].get_nom() == get_nom())
+                        {
+                            //On récupère son indice
+                            indiceDepart = i;
+                        }
+                        //SINON SI le nomde l'aéroport est celui de l'aéroport d'arrivée
+                        else if(m_aeroports[i].get_nom() == prochaineDestination)
+                        {
+                            //On récupère son indice
+                            indiceArrivee = i;
+                        }
                     }
-                    //SINON SI le nomde l'aéroport est celui de l'aéroport d'arrivée
-                    else if(m_aeroports[i].get_nom() == prochaineDestination)
+
+                    //Actualisation de l'aéroport initial et final du trajet
+                    m_avions_parking.front()->setNomAeroportInitial(get_nom());
+                    m_avions_parking.front()->setNomAeroportFinal(prochaineDestination);
+
+                    //On détermine le trajet le plus court grâce à DIJKSTRA
+                    vecteur_escales = dijkstra(m_matrice_adjacence, int(m_aeroports.size()), indiceDepart, indiceArrivee);
+                    m_avions_parking.front()->setListeEscales(vecteur_escales);
+
+                    //On actualise le prochain aéroport
+                    m_avions_parking.front()->setNomAeroportA(m_aeroports[m_avions_parking.front()->getIndicePrecisEscale(0)].get_nom());
+
+                    //On actualise l'heure de départ du vol
+                    m_avions_parking.front()->setHeureDepart(heureActuelle);
+
+                    if(int (vecteur_escales.size() )== 1)
+
                     {
-                        //On récupère son indice
-                        indiceArrivee = i;
+                        for(int i=0; i< int (get_distance_aeroports().size()); i++)
+                        {
+                            if(get_distance_aeroports()[i].first == prochaineDestination)
+                            {
+                                distance = get_distance_aeroports()[i].second;
+                            }
+                        }
                     }
                 }
+                while(verifier_distance_chemin(m_avions_parking.front(), vecteur_escales, m_matrice_adjacence, distance)==false);  //blindage distance / type de vol
 
-                //On détermine le trajet le plus court grâce à DIJKSTRA
-                m_avions_parking.front()->setListeEscales(dijkstra(m_matrice_adjacence, int(m_aeroports.size()), indiceDepart, indiceArrivee));
-
-                //On actualise le prochain aéroport
-                m_avions_parking.front()->setNomAeroportA(m_aeroports[m_avions_parking.front()->getIndicePrecisEscale(0)].get_nom());
+                for(size_t t=0; t<vecteur_escales.size(); t++)
+                {
+                    m_avions_parking.front()->set_liste_escales(m_aeroports[vecteur_escales[t]].get_nom());
+                }
             }
             //SINON, l'avion n'a pas fini son trajet, il continue alors ses escales
             else
@@ -854,8 +979,11 @@ void Aeroport::actualisationParking(vector<Aeroport> m_aeroports, int indiceAero
                 m_avions_parking.front()->setNomAeroportA(m_aeroports[m_avions_parking.front()->getIndicePrecisEscale(0)].get_nom());
             }
 
+            //Récupération des informations de l'aéroport d'arrivée
+            m_avions_parking.front()->recuperationInfosAeroportA(m_aeroports[m_avions_parking.front()->getIndicePrecisEscale(0)]);
+
             //On actualise le trajet allant être effectué
-            m_avions_parking.front()->parametrer_nouveau_vol(m_aeroports[indiceAeroport], m_aeroports[m_avions_parking.front()->getIndicePrecisEscale(0)]);
+            m_avions_parking.front()->parametrer_nouveau_vol(m_aeroports[indiceAeroport].get_position().get_coord_x(),m_aeroports[indiceAeroport].get_position().get_coord_y(), m_aeroports[m_avions_parking.front()->getIndicePrecisEscale(0)].get_position().get_coord_x(),m_aeroports[m_avions_parking.front()->getIndicePrecisEscale(0)].get_position().get_coord_y());
 
             //On ajoute l'avion dans la file d'accès aux pistes
             m_queue_acces_piste.push_back(new Avion);
@@ -870,10 +998,75 @@ void Aeroport::actualisationParking(vector<Aeroport> m_aeroports, int indiceAero
         {
             transitionPossible = false;
         }
+    }
 
+    //Boucle d'actualisation de l'altitude de l'avion à celui de l'aéroport
+    for(int i=0 ; i<int(m_avions_parking.size()) ; i++)
+    {
+        //SI c'est un court courrier
+        if(m_avions_parking[i]->get_type_vol() == "court")
+        {
+            m_avions_parking[i]->set_altitude(getAltitudesAvions(0));
+        }
+        //SINON SI c'est un moyen courrier
+        else if(m_avions_parking[i]->get_type_vol() == "moyen")
+        {
+            m_avions_parking[i]->set_altitude(getAltitudesAvions(1));
+        }
+        //SINON SI c'est un long courrier
+        else if(m_avions_parking[i]->get_type_vol() == "long")
+        {
+            m_avions_parking[i]->set_altitude(getAltitudesAvions(2));
+        }
     }
 }
 
+bool Aeroport::verifier_distance_chemin (Avion * avion_utlise, vector<int> vecteur_escales, int **m_matrice_adjacence, int distance)
+{
+    int distance_max = distance_maximale(vecteur_escales, m_matrice_adjacence, distance);
+
+    if(distance_max>0 && distance_max<= 3000 && avion_utlise->get_type_vol() == "court")
+    {
+        return true;
+    }
+    else if(distance_max > 3000 && distance_max <= 8000 && avion_utlise->get_type_vol() == "moyen")
+    {
+        return true;
+    }
+    else if(distance_max > 8000 && avion_utlise->get_type_vol() == "long")
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+int Aeroport::distance_maximale( vector<int> vecteur_escales, int **m_matrice_adjacence, int distance)
+{
+    if(int (vecteur_escales.size()) != 1)
+    {
+        int maxi =0;
+
+        for(int t=0; t<=int(vecteur_escales.size()-1); t++)
+        {
+
+            if(m_matrice_adjacence[vecteur_escales[t]][vecteur_escales[t+1]] > maxi)
+            {
+
+                maxi = m_matrice_adjacence[vecteur_escales[t]][vecteur_escales[t+1]];
+            }
+        }
+        return maxi;
+    }
+    else
+    {
+        return distance;
+    }
+
+
+}
 
 //Méthode d'ajout d'un avion dans le parking de l'aéroport
 void Aeroport::ajoutAvionParking(Avion *nouvelAvion)
@@ -890,10 +1083,21 @@ void Aeroport::ajoutAvionParking(Avion *nouvelAvion)
 
 
 
+////////////////////////////////////
+// RECHERCHE DU PLUS COURT CHEMIN //
+////////////////////////////////////
+
 //Méthode de pioche aléatoire d'un nom d'aéroport
 string Aeroport::piocheAeroportAleatoire()
 {
-    return m_distance_aeroports[rand()%(int(m_distance_aeroports.size()))].first;
+    int valeur_aleatoire = 0;
+    do
+    {
+        valeur_aleatoire = rand()%(int(m_distance_aeroports.size()));
+    }
+    while(m_distance_aeroports[valeur_aleatoire].second == -1);
+
+    return m_distance_aeroports[valeur_aleatoire].first;
 }
 
 
@@ -918,17 +1122,20 @@ vector <int> Aeroport::dijkstra(int** m_matrice_adjacence, int m_envergureSimula
 
     //BOUCLE D'ALGO
     for(int i=0; i<m_envergureSimulation; i++)
-    {//Pour chaque sommet
+    {
+        //Pour chaque sommet
         int sommet_proche = distance_minimale(m_envergureSimulation, distance, verif_arrivee); //Distance la plus proche
         verif_arrivee[sommet_proche] = true; //Sommet actuel visité
 
         for(int j=0; j<m_envergureSimulation; j++)
-        {//Pour chaque sommet
+        {
+            //Pour chaque sommet
             if(!verif_arrivee[j] && m_matrice_adjacence[sommet_proche][j] && distance[sommet_proche] != INT_MAX && distance[sommet_proche] + m_matrice_adjacence[sommet_proche][j] < distance[j])
-            {//Sommet non visiter & le sommet le plus proche dans la matrice == 0 & distance du sommet le plus proche != infini & distance du sommet le plus proche + distance jusqu'au prochain sommet < à distance precedemment calculé
+            {
+                //Sommet non visiter & le sommet le plus proche dans la matrice == 0 & distance du sommet le plus proche != infini & distance du sommet le plus proche + distance jusqu'au prochain sommet < à distance precedemment calculé
                 //MISE A JOUR CAR CHEMIN PLUS COURT TROUVE
                 distance[j] = distance[sommet_proche] + m_matrice_adjacence[sommet_proche][j]; //Mise à jour de la distance
-              predecesseur[j] = sommet_proche; //Mise à jour du predecesseur
+                predecesseur[j] = sommet_proche; //Mise à jour du predecesseur
             }
         }
     }
@@ -947,9 +1154,11 @@ int Aeroport::distance_minimale(int m_envergureSimulation, int * dist, bool * ve
     int mini = INT_MAX, index = 0;
 
     for (int i = 0; i < m_envergureSimulation; i++)
-    {//Pour chaque sommet
+    {
+        //Pour chaque sommet
         if (verif[i] == false && dist[i] <= mini)
-        {//Si la case n'est pas explorée & distance inferieur à l'infinie
+        {
+            //Si la case n'est pas explorée & distance inferieur à l'infinie
             //MISE A JOUR DE LA DISTANCE
             mini = dist[i]; //Changement distance par rapport au sommet
             index = i; //Enregistrement de l'index
@@ -963,7 +1172,8 @@ int Aeroport::distance_minimale(int m_envergureSimulation, int * dist, bool * ve
 void Aeroport::afficher_chemin(int * predecesseur, int j, std::vector <int> &correspondance)
 {
     if (predecesseur[j] == - 1)
-    {//Si le sommet n'a pas de predecesseur
+    {
+        //Si le sommet n'a pas de predecesseur
     }
 
     else
@@ -986,7 +1196,8 @@ vector <int> Aeroport::resultat(int * dist, bool * verif, int * predecesseur, in
     vector <int> correspondances;
 
     if(verif[arrivee] == true)
-    {//Si le sommet est rallié
+    {
+        //Si le sommet est rallié
         //Chemin de predecesseurs
         //std::cout << std::endl << "Chemin : " << m_aeroports[source].get_nom()<< "  ";
         afficher_chemin(predecesseur, arrivee, correspondances); //Appel de la fonction traçant le chemin à réaliser

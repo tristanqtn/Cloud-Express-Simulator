@@ -27,8 +27,14 @@ class Horloge
         int get_jour();
         int get_mois();
         int get_annee();
-
         std::pair <int ,int> get_heure();
+
+        void set_jour(int jour);
+        void set_mois(int mois);
+        void set_annee(int annee);
+        void set_heure(int heure, int minute);
+
+        void affichageOverlayAvion(int x, int y, FONT* police, BITMAP* doubleBuffer);
 
         void actualiser_heure();
         void sauvegarder_heure();

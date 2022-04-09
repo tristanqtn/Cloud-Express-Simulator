@@ -6,9 +6,10 @@
     // DECLARATION DES CONSTANTES //
     ////////////////////////////////
 
-#define NBRE_BITMAPS 22
-#define NBRE_POLICES 10
+#define NBRE_BITMAPS 37
+#define NBRE_POLICES 11
 #define UT 10
+#define MAX_INTEMPERIES 5
 
 
 

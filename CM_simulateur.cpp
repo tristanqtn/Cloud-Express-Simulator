@@ -1,11 +1,12 @@
 #include "CH_simulateur.h"
+#include <math.h>
 
 using namespace std;
 
 
-    //////////////////////////////////
-    // CONSTRUCTEURS ET DESTRUCTEUR //
-    //////////////////////////////////
+//////////////////////////////////
+// CONSTRUCTEURS ET DESTRUCTEUR //
+//////////////////////////////////
 
 
 //Constructeur par défaut
@@ -32,9 +33,9 @@ Simulateur::~Simulateur()
 
 
 
-    ////////////////
-    // ACCESSEURS //
-    ////////////////
+////////////////
+// ACCESSEURS //
+////////////////
 
 //Getter de l'indice d'un aéroport
 int Simulateur::getIndiceAeroport(string nomAeroport)
@@ -53,14 +54,14 @@ int Simulateur::getIndiceAeroport(string nomAeroport)
 
 
 
-    //////////////
-    // METHODES //
-    //////////////
+//////////////
+// METHODES //
+//////////////
 
 
-        //////////////////////////////////////
-        // FONCTIONS DIRECTES DU SIMULATEUR //
-        //////////////////////////////////////
+//////////////////////////////////////
+// FONCTIONS DIRECTES DU SIMULATEUR //
+//////////////////////////////////////
 
 //Méthode d'initialisation du simulateur
 void Simulateur::initSimulateur(int modeSimulation, int envergureSimulation)
@@ -86,6 +87,9 @@ void Simulateur::initSimulateur(int modeSimulation, int envergureSimulation)
     {
         charger_carte_EXTREME();
     }
+
+    //Coloration du graphe
+    algoWelsh();
 
     //Création des routes aériennes entre les aéroports
     for(int i=0 ; i<int(m_aeroports.size()) ; i++) //Boucle de parcours du vecteur d'aéroports
@@ -121,6 +125,13 @@ void Simulateur::initSimulateur(int modeSimulation, int envergureSimulation)
                     //On crée la nouvelle route
                     m_ensembleRoutes.back()->initAeroports(m_aeroports[i], m_aeroports[getIndiceAeroport(m_aeroports[i].get_distance_aeroports()[j].first)]); //Ajout du lien entre les deux aéroports
                     m_ensembleRoutes.back()->setLongueur(m_aeroports[i].get_distance_aeroports()[j].second); //Ajout de la distance
+
+                    //Initialisation du double vecteur d'entiers de la route
+                    m_ensembleRoutes.back()->initTabEtats();
+
+                    //On initialise les coefficients de la droite
+                    m_ensembleRoutes.back()->setARoute((m_ensembleRoutes.back()->getAeroport(1)->get_position().get_coord_y() - m_ensembleRoutes.back()->getAeroport(0)->get_position().get_coord_y()) / (m_ensembleRoutes.back()->getAeroport(1)->get_position().get_coord_x() - m_ensembleRoutes.back()->getAeroport(0)->get_position().get_coord_x()));
+                    m_ensembleRoutes.back()->setBRoute(m_ensembleRoutes.back()->getAeroport(1)->get_position().get_coord_y() - (m_ensembleRoutes.back()->getARoute() * m_ensembleRoutes.back()->getAeroport(1)->get_position().get_coord_x()));
                 }
             }
         }
@@ -271,8 +282,8 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
     //Processus d'initialisation des cartes affichées en fond
     initCartesFond(motherShip);
 
-    creer_avion("aleatoire");
-    m_flotte_avions[0]->parametrer_nouveau_vol(m_aeroports[getIndiceAeroport("CDG")], m_aeroports[getIndiceAeroport("JFK")]);
+    //creer_avion("aleatoire");
+    //m_flotte_avions[0]->parametrer_nouveau_vol(m_aeroports[getIndiceAeroport("CDG")], m_aeroports[getIndiceAeroport("JFK")]);
 
     //Boucle de déroulement général de la partie
     while(!finDeroulement)
@@ -290,20 +301,41 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
             {
                 compteur = 0; //Réinitialisation du compteur
 
+                //Boucle d'actualisation des intempéries
+                for(int i=0 ; i<int(m_listeIntemperies.size()) ; i++)
+                {
+                    //Actualisation de l'intempérie
+                    m_listeIntemperies[i]->actualisationIntemperie();
+
+                    //SI l'intempérie est terminée
+                    if(m_listeIntemperies[i]->getDureeIntemperie() == 0)
+                    {
+                        //On la supprime du vecteur de pointeurs sur Intempérie
+                        m_listeIntemperies.erase(m_listeIntemperies.begin() + i);
+                    }
+                }
+
+                //ACTUALISATION DE L'HORLOGE
+                m_horlogeGMT.actualiser_heure();
+
                 //ACTUALISATION DES AEROPORTS
                 for(int i=0 ; i<int(m_aeroports.size()) ; i++)
                 {
-                    m_aeroports[i].actualisationAeroport(m_aeroports, m_ensembleRoutes, i, m_matrice_adjacence);
+                    m_aeroports[i].actualisationAeroport(m_aeroports, m_ensembleRoutes, i, m_matrice_adjacence, m_horlogeGMT);
+
                 }
 
                 //ACTUALISATION DES AVIONS
                 for(int i=0 ; i<int(m_flotte_avions.size()) ; i++)
                 {
-                    m_flotte_avions[i]->actualiser_action_avion();
+                    ///////////////////
+                    bool crash = m_flotte_avions[i]->actualiser_action_avion();
+                    if(crash == true)
+                    {
+                        nouveau_crash((m_flotte_avions[i]));
+                    }
+                    ///////////////////
                 }
-
-                //ACTUALISATION DE L'HORLOGE
-                m_horlogeGMT.actualiser_heure();
             }
         }
 
@@ -320,8 +352,26 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
             blit(motherShip.getBIT(7), motherShip.getBIT(0), 0, 0, 0, 0, motherShip.getBIT(7)->w, motherShip.getBIT(7)->h); //Affichage de la map monde NUIT
         }
 
+        //SI l'utilisateur appuie sur C
+        if(key[KEY_C])
+        {
+            //On affiche le quadrillage
+            affichageQuadrillage(motherShip);
+        }
+
+
         //Affichage de l'horloge
         m_horlogeGMT.afficher_heure_date(motherShip.getBIT(0), motherShip.getFONT(6), motherShip.getFONT(5));
+
+        //Boucle d'affichage des intempéries
+        for(int i=0 ; i<int(m_listeIntemperies.size()) ; i++)
+        {
+            //On affiche l'intempérie
+            m_listeIntemperies[i]->afficherIntemperie(motherShip);
+        }
+
+        //Analyse du placement des intempéries
+        rechercheIntemperie(motherShip);
 
         //Affichage du rectangle de droite
         rectfill(motherShip.getBIT(0), coorXRectangleDroite, 0, SCREEN_W, SCREEN_H, makecol(41, 49, 51));
@@ -329,17 +379,21 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
         //Affichage du menu de droite actuel
         switch(etatMenu)
         {
-            case 1 : //Menu principal : CHOIX
-                menuPrincipal(motherShip, indicClic, etatMenu);
-                break;
+        case 1 : //Menu principal : CHOIX
+            menuPrincipal(motherShip, indicClic, etatMenu);
+            break;
 
-            case 2 : //Menu secondaire : AJOUT D'UN AVION
-                menuAjoutAvion(motherShip, indicClic, etatMenu);
-                break;
+        case 2 : //Menu secondaire : AJOUT D'UN AVION
+            menuAjoutAvion(motherShip, indicClic, etatMenu);
+            break;
 
-            case 3 : //Menu secondaire : SUPPRESSION D'UN AVION
-                menuSupprimerAvion(motherShip, indicClic, etatMenu);
-                break;
+        case 3 : //Menu secondaire : SUPPRESSION D'UN AVION
+            menuSupprimerAvion(motherShip, indicClic, etatMenu);
+            break;
+
+        case 4 : //Menu secondaire : AJOUT D'UNE INTEMPERIE
+            menuAjoutIntemperie(motherShip, indicClic, etatMenu);
+            break;
         }
 
         //Affichage des boutons de déroulement temporel de la simulation
@@ -422,7 +476,7 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
         //Parcours de l'ensemble des aéroports pour voir si la souris est au dessus de l'un d'eux
         for(int i=0 ; i<int(m_aeroports.size()) ; i++)
         {
-            m_aeroports[i].actualisationPointeurLocalisation(motherShip, indicClic, indicEchap);
+            m_aeroports[i].actualisationPointeurLocalisation(motherShip, m_aeroports, indicClic, indicEchap);
         }
 
         //Parcours de l'ensemble des routes aériennes pour voir si la souris est au dessus de l'une d'elles
@@ -435,6 +489,12 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
         for(int i=0 ; i<int(m_flotte_avions.size()) ; i++)
         {
             m_flotte_avions[i]->affichageAvionCarte(motherShip.getBIT(0), motherShip.getBIT(18), motherShip.getBIT(19), motherShip.getBIT(20));
+        }
+
+        //Parcours de l'ensemble des avions afin de voir si l'utilsiateur souhaite afficher leur overlay
+        for(int i=0 ; i<int(m_flotte_avions.size()) ; i++)
+        {
+            m_flotte_avions[i]->actualisationSurbrillanceAvion(m_aeroports, true, m_flotte_avions[i]->get_coord().get_coord_x(), m_flotte_avions[i]->get_coord().get_coord_y(),motherShip.getBIT(0), motherShip.getBIT(26), motherShip.getBIT(30), motherShip.getBIT(27), motherShip.getBIT(28), motherShip.getBIT(29), motherShip.getFONT(7), motherShip.getFONT(2), motherShip.getFONT(10));
         }
 
         //SI la touche ESPACE est pressée, on inverse l'état de pause de la simulation
@@ -493,25 +553,76 @@ void Simulateur::nouvelAvionDansParking(Avion *nouvelAvion)
         //SI l'aéroport est disponible
         if(int(m_aeroports[i].getNbreAvionsParking()) < m_aeroports[i].get_nombre_places_sol())
         {
-            //On l'ajoute dans la liste des aéroports disponibles
-            listeAeroportsDispo.push_back(i);
+            if(verifier_distance_chemin_sim(nouvelAvion->get_type_vol(), m_aeroports[i].get_distance_aeroports())==true)
+                //On l'ajoute dans la liste des aéroports disponibles
+             {
+
+                listeAeroportsDispo.push_back(i);
+             }
         }
     }
 
     //On tire aléatoirement un des indices parmi ceux disponibles
     indiceAeroportAleatoire = rand()%(int(listeAeroportsDispo.size()));
-
-    cout << endl << "AEROPORT DE DEPART : " << m_aeroports[indiceAeroportAleatoire].get_nom() << endl << endl;
+    cout << endl << "AEROPORT DE DEPART : " << m_aeroports[listeAeroportsDispo[indiceAeroportAleatoire]].get_nom() << endl << endl;
 
     //On ajoute l'avion à l'aéroport désigné
-    m_aeroports[indiceAeroportAleatoire].ajoutAvionParking(nouvelAvion);
+    m_aeroports[listeAeroportsDispo[indiceAeroportAleatoire]].ajoutAvionParking(nouvelAvion);
+}
+
+bool Simulateur::verifier_distance_chemin_sim (string type_vol, vector<pair<string, int>> aeroports_connectes)
+{
+    int distance_min = distance_minimale_sim(aeroports_connectes);
+
+    if(distance_min <= 3000 && type_vol == "court")
+    {
+        return true;
+    }
+    else if(distance_min > 3000 && distance_min <= 8000 && type_vol == "moyen")
+    {
+        return true;
+    }
+    else if(distance_min > 8000 && type_vol == "long")
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+int Simulateur::distance_minimale_sim(vector<pair<string, int>> aeroports_connectes)
+{
+    int mini = INT_MAX;
+    for(size_t t=0; t<aeroports_connectes.size(); t++)
+    {
+        if(aeroports_connectes[t].second < mini && aeroports_connectes[t].second!=-1)
+        {
+            mini = aeroports_connectes[t].second;
+        }
+    }
+    return mini;
 }
 
 
+//Méthode de positionnement des intempéries sur les routes
 
-        ///////////////////////////////////////
-        // FONCTIONS PRATIQUES DU SIMULATEUR //
-        ///////////////////////////////////////
+/*
+parcours du tableau d'intempéries :
+m_listeIntemperies[i]->get_coord_x() par exemple
+
+parcours du tableau de routes
+m_ensembleRoute[i]->getARoute()
+
+
+*/
+
+
+
+///////////////////////////////////////
+// FONCTIONS PRATIQUES DU SIMULATEUR //
+///////////////////////////////////////
 
 //Méthode d'affichage de l'ensemble des aéroports
 void Simulateur::afficher_aeroports()
@@ -546,7 +657,7 @@ void Simulateur::creer_avion(string type_de_vol)
         {
             if(modele_aleatoire == 0)
             {
-               m_flotte_avions.back()->set_modele("BOMBARDIER CRJ 200");
+                m_flotte_avions.back()->set_modele("BOMBARDIER CRJ 200");
             }
             else if(modele_aleatoire == 1)
             {
@@ -561,7 +672,7 @@ void Simulateur::creer_avion(string type_de_vol)
         {
             if(modele_aleatoire == 0)
             {
-               m_flotte_avions.back()->set_modele("AIRBUS A220");
+                m_flotte_avions.back()->set_modele("AIRBUS A220");
             }
             else if(modele_aleatoire == 1)
             {
@@ -576,7 +687,7 @@ void Simulateur::creer_avion(string type_de_vol)
         {
             if(modele_aleatoire == 0)
             {
-               m_flotte_avions.back()->set_modele("AIRBUS A830");
+                m_flotte_avions.back()->set_modele("AIRBUS A830");
             }
             else if(modele_aleatoire == 1)
             {
@@ -617,7 +728,7 @@ void Simulateur::creer_avion(string type_de_vol)
         //Choix aléatoire du modèle
         if(modele_aleatoire == 0)
         {
-           m_flotte_avions.back()->set_modele("BOMBARDIER CRJ 200");
+            m_flotte_avions.back()->set_modele("BOMBARDIER CRJ 200");
         }
         else if(modele_aleatoire == 1)
         {
@@ -650,21 +761,25 @@ void Simulateur::creer_avion(string type_de_vol)
     }
 
     if(type_de_vol == "moyen")
-    {//génération d'un vol moyen
+    {
+        //génération d'un vol moyen
 
         m_flotte_avions.push_back(new Avion(m_infos_types_avions[1]));
 
         //Choix du modèle aléatoirement
         if(modele_aleatoire == 0)
-        {//choix aléatoire selon la valeur de modele_aleatoire
-           m_flotte_avions.back()->set_modele("AIRBUS A220");
+        {
+            //choix aléatoire selon la valeur de modele_aleatoire
+            m_flotte_avions.back()->set_modele("AIRBUS A220");
         }
         else if(modele_aleatoire == 1)
-        {//choix aléatoire selon la valeur de modele_aleatoire
+        {
+            //choix aléatoire selon la valeur de modele_aleatoire
             m_flotte_avions.back()->set_modele("BOEING 747");
         }
         else if(modele_aleatoire == 2)
-        {//choix aléatoire selon la valeur de modele_aleatoire
+        {
+            //choix aléatoire selon la valeur de modele_aleatoire
             m_flotte_avions.back()->set_modele("BOEING 757");
         }
 
@@ -690,21 +805,25 @@ void Simulateur::creer_avion(string type_de_vol)
     }
 
     if(type_de_vol == "long")
-    {//génération d'un vol long
+    {
+        //génération d'un vol long
 
         m_flotte_avions.push_back(new Avion(m_infos_types_avions[2]));
 
         //Choix du modèle aléatoirement
         if(modele_aleatoire == 0)
-        {//choix aléatoire selon la valeur de modele_aleatoire
-           m_flotte_avions.back()->set_modele("AIRBUS A830");
+        {
+            //choix aléatoire selon la valeur de modele_aleatoire
+            m_flotte_avions.back()->set_modele("AIRBUS A830");
         }
         else if(modele_aleatoire == 1)
-        {//choix aléatoire selon la valeur de modele_aleatoire
+        {
+            //choix aléatoire selon la valeur de modele_aleatoire
             m_flotte_avions.back()->set_modele("AIRBUS A850");
         }
         else if(modele_aleatoire == 2)
-        {//choix aléatoire selon la valeur de modele_aleatoire
+        {
+            //choix aléatoire selon la valeur de modele_aleatoire
             m_flotte_avions.back()->set_modele("BOIENG 777");
         }
 
@@ -755,9 +874,9 @@ void Simulateur::supprimer_avion_on_click(string immatriculation)
 
 
 
-        /////////////////////////////////////
-        // FONCTIONS DE MENU DU SIMULATEUR //
-        /////////////////////////////////////
+/////////////////////////////////////
+// FONCTIONS DE MENU DU SIMULATEUR //
+/////////////////////////////////////
 
 //Méthode du menu déclenché lors de la pression de la touche ESCAPE
 void Simulateur::menuESC(bool &done, bool &finDeroulement, bool &indicClic, bool &indicEchap, BITMAP* doubleBuffer, BITMAP* curseur, FONT* policeTitre, FONT* policeChoix)
@@ -812,6 +931,11 @@ void Simulateur::menuESC(bool &done, bool &finDeroulement, bool &indicClic, bool
                 indicClic = true; //Indication que le clic gauche est maintenu
                 finMenuESC = true;
                 finDeroulement = true;
+
+                for(size_t t=0; t<m_flotte_avions.size(); t++)
+                {
+                    m_flotte_avions[t]->enregistrer_informations();
+                }
             }
         }
 
@@ -826,6 +950,11 @@ void Simulateur::menuESC(bool &done, bool &finDeroulement, bool &indicClic, bool
                 finMenuESC = true;
                 finDeroulement = true;
                 done = true;
+
+                for(size_t t=0; t<m_flotte_avions.size(); t++)
+                {
+                    m_flotte_avions[t]->enregistrer_informations();
+                }
             }
         }
 
@@ -864,7 +993,10 @@ void Simulateur::menuPrincipal(Ressources &motherShip, bool &indicClic, int &eta
     textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(3), 1250, 30, makecol(255,255,255),-1, "Choix");
     textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1190, 150, makecol(255,255,255),-1, "Ajouter un avion");
     textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1190, 200, makecol(255,255,255),-1, "Supprimer un avion");
+    textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1190, 250, makecol(255,255,255),-1, "Ajouter intemperie");
+    textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1190, 300, makecol(255, 255, 255), -1, "Fuite de reservoir");
 
+    // cout << mouse_x << " et " << mouse_y << endl;
     //SI la souris passe sur "Ajouter un avion"
     if(mouse_x > 1190 && mouse_x < 1422 && mouse_y > 150 && mouse_y < 180)
     {
@@ -888,6 +1020,36 @@ void Simulateur::menuPrincipal(Ressources &motherShip, bool &indicClic, int &eta
         {
             indicClic = true; //Indication que le clic gauche est pressé
             etat = 3; //On passe au menu de suppression d'un avion
+        }
+    }
+
+    //SINON SI la souris passe sur "Ajouter une intempérie"
+    else if(mouse_x > 1190 && mouse_x < 1422 && mouse_y > 250 && mouse_y < 280)
+    {
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1190, 250, makecol(25,255,52),-1, "Ajouter intemperie");//Changement de couleur du texte
+
+        //SI clic
+        if(mouse_b & 1 && indicClic == false)
+        {
+            indicClic = true; //Indication que le clic gauche est pressé
+            etat = 4; //On passe au menu d'ajout d'une intempérie
+        }
+    }
+
+    //SINON SI la souris passe sur "Ajouter une intempérie"
+    else if(mouse_x > 1190 && mouse_x < 1457 && mouse_y > 300 && mouse_y < 330)
+    {
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1190, 300, makecol(25,255,52),-1, "Fuite de reservoir");//Changement de couleur du texte
+
+        //SI clic
+        if(mouse_b & 1 && indicClic == false)
+        {
+            indicClic = true; //Indication que le clic gauche est pressé
+
+            int indice_hasard = rand()%m_flotte_avions.size();
+            m_flotte_avions[indice_hasard]->set_etat_reservoir(true);
+            // FUITE DE RESERVOIR ICI
+            // PTET RAJOUTER UN ATTRIBUT A AVION HISTOIRE DE POUVOIR LAFFICHER DIFFEREMMENT
         }
     }
 }
@@ -1086,10 +1248,92 @@ void Simulateur::menuSupprimerAvion(Ressources &motherShip, bool &indicClic, int
 }
 
 
+void Simulateur::menuAjoutIntemperie(Ressources &motherShip, bool &indicClic, int &etat)
+{
+    //Affichage du titre
+    textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(3),1200, 30, makecol(255,255,255), -1, "Ajouter");
+    textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(7),1220, 110, makecol(255,255,255), -1, "intemperie");
 
-    /////////////////
-    // INDICATEURS //
-    /////////////////
+    //Affichage du bouton de retour
+    textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 610, makecol(255,255,255),-1, "Retour");
+
+    //SI il est encore possible d'ajouter des intempéries
+    if(int(m_listeIntemperies.size()) < MAX_INTEMPERIES)
+    {
+        //Affichage des choix disponibles
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 250, makecol(255,255,255),-1, "Aleatoire");
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 300, makecol(255,255,255),-1, "Pluie");
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 350, makecol(255,255,255),-1, "Vents violents");
+
+
+        //SI la souris passe sur "Aleatoire"
+        if(mouse_x > 1200 && mouse_x < 1405 && mouse_y > 250 && mouse_y < 275)
+        {
+            textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 250, makecol(25,255,52),-1, "Aleatoire"); //Changement de couleur du texte
+
+            //SI clic
+            if(mouse_b & 1 && indicClic == false)
+            {
+                indicClic = true; //Indication que le clic gauche est pressé
+
+                //Création de l'intempérie ALEATOIRE
+                m_listeIntemperies.push_back(new Intemperie("aleatoire"));
+            }
+        }
+        //SINON SI la souris passe sur "Pluie"
+        else if(mouse_x > 1200 && mouse_x < 1415 && mouse_y > 300 && mouse_y < 325)
+        {
+            textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 300, makecol(25,255,52),-1, "Pluie"); //Changement de couleur du texte
+
+            //SI clic
+            if(mouse_b & 1 && indicClic == false)
+            {
+                indicClic = true; //Indication que le clic gauche est pressé
+
+                //Création de l'intempérie PLUIE
+                m_listeIntemperies.push_back(new Intemperie("pluie"));
+            }
+        }
+        //SINON SI la souris passe sur "Vents violents"
+        else if(mouse_x > 1200 && mouse_x < 1395 && mouse_y > 350 && mouse_y < 375)
+        {
+            textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 350, makecol(25,255,52),-1, "Vents violents"); //Changement de couleur du texte
+
+            //SI clic
+            if(mouse_b & 1 && indicClic == false)
+            {
+                indicClic = true; //Indication que le clic gauche est pressé
+
+                //Création de l'intempérie VENT
+                m_listeIntemperies.push_back(new Intemperie("vent"));
+            }
+        }
+    }
+    //SINON, il n'est plus possible d'en rajouter
+    else
+    {
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1180, 400, makecol(255,255,255),-1, "Trop d'intemperies..."); //On l'indique
+    }
+
+    //SI la souris passe sur "Retour"
+    if(mouse_x > 1187 && mouse_x < 1315 && mouse_y > 610 && mouse_y < 635)
+    {
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 610, makecol(25,255,52),-1, "Retour"); //Changement de couleur du texte
+
+        //SI clic
+        if(mouse_b & 1 && indicClic == false)
+        {
+            indicClic = true; //Indication que le clic gauche est pressé
+            etat = 1; //Retour au menu précédent
+        }
+    }
+}
+
+
+
+/////////////////
+// INDICATEURS //
+/////////////////
 
 //Méthode permettant de savoir si il reste des aéroports disponibles pour ajouter des avions
 bool Simulateur::aeroportDisponible()
@@ -1129,9 +1373,9 @@ bool Simulateur::encoreDesAvions()
 
 
 
-        //////////////
-        // REGLAGES //
-        //////////////
+//////////////
+// REGLAGES //
+//////////////
 
 //Méthode d'initialisation des cartes mondiales en fonction des aéroports
 void Simulateur::initCartesFond(Ressources &motherShip)
@@ -1147,9 +1391,9 @@ void Simulateur::initCartesFond(Ressources &motherShip)
     {
         //SI la route passe d'un bord de l'écran à l'autre
         if((m_ensembleRoutes[i]->getAeroport(0)->get_nom() == "HNL" && m_ensembleRoutes[i]->getAeroport(1)->get_nom() == "HND")
-            || (m_ensembleRoutes[i]->getAeroport(0)->get_nom() == "HND" && m_ensembleRoutes[i]->getAeroport(1)->get_nom() == "HNL")
-            || (m_ensembleRoutes[i]->getAeroport(0)->get_nom() == "HNL" && m_ensembleRoutes[i]->getAeroport(1)->get_nom() == "WLG")
-            || (m_ensembleRoutes[i]->getAeroport(0)->get_nom() == "WLG" && m_ensembleRoutes[i]->getAeroport(1)->get_nom() == "HNL"))
+                || (m_ensembleRoutes[i]->getAeroport(0)->get_nom() == "HND" && m_ensembleRoutes[i]->getAeroport(1)->get_nom() == "HNL")
+                || (m_ensembleRoutes[i]->getAeroport(0)->get_nom() == "HNL" && m_ensembleRoutes[i]->getAeroport(1)->get_nom() == "WLG")
+                || (m_ensembleRoutes[i]->getAeroport(0)->get_nom() == "WLG" && m_ensembleRoutes[i]->getAeroport(1)->get_nom() == "HNL"))
         {
             //SI l'aéroport de "départ" est à gauche de l'écran et que son arrivée est à droite
             if(m_ensembleRoutes[i]->getAeroport(0)->get_position().get_coord_x() < m_ensembleRoutes[i]->getAeroport(1)->get_position().get_coord_x())
@@ -1295,19 +1539,24 @@ void Simulateur::deduire_matrice_adjacence ()
 
     //mise à 0 de toutes les cases de la matrice
     for(int i=0; i<m_envergureSimulation; i++)
-    {//Colonnes
+    {
+        //Colonnes
         for(int j=0; j<m_envergureSimulation; j++)
-        {//Lignes
+        {
+            //Lignes
             m_matrice_adjacence[i][j] = 0; //RAZ
         }
     }
 
     for(int i=0; i<m_envergureSimulation; i++)
-    {//Pour chaque aéroport du simulateur
+    {
+        //Pour chaque aéroport du simulateur
         for(size_t t=0; t<m_aeroports[i].get_distance_aeroports().size(); t++)
-        {//Pour chaque aéroports connectés à l'aéroport étudié
+        {
+            //Pour chaque aéroports connectés à l'aéroport étudié
             if(m_aeroports[i].get_successeur_precis(t).second != -1)
-            {//Si les aéroports sont bel et bien connecté (poid != -1)
+            {
+                //Si les aéroports sont bel et bien connecté (poid != -1)
                 //Stockage du poid dans la colonne de l'aeroport étudié et ligne de l'aéroport connecté
                 m_matrice_adjacence[getIndiceAeroport(m_aeroports[i].get_nom())][getIndiceAeroport(m_aeroports[i].get_successeur_precis(t).first)] = m_aeroports[i].get_successeur_precis(t).second;
             }
@@ -1317,3 +1566,512 @@ void Simulateur::deduire_matrice_adjacence ()
 
 
 
+void Simulateur::nouveau_crash(Avion * crash)
+{
+    std::ofstream fichier;
+    fichier.open("data/historique_crash/historique_crash.txt", std::ofstream::app);
+
+    if(!fichier)
+    {}
+    else
+    {
+        fichier << "Le " << crash->get_modele() << " du vol " << crash->get_immatriculation() << " au depart de " << crash->getNomAeroportD() << " a destination de " << crash->getNomAeroportD() << " le " << m_horlogeGMT.get_jour() << "/" << m_horlogeGMT.get_mois()<< "/"  << m_horlogeGMT.get_annee()<< " a " << m_horlogeGMT.get_heure().first<< "h" << m_horlogeGMT.get_heure().second<< "\n";
+        fichier.close();
+    }
+
+
+    m_coord_crash.push_back(crash->get_coord());
+    m_duree_affichage_crash.push_back(4);
+
+    for(size_t t=0; t<m_ensembleRoutes.size(); t++)
+    {
+        m_ensembleRoutes[t]->supprimer_avion(crash->get_immatriculation());
+    }
+    supprimer_avion_on_click(crash->get_immatriculation());
+}
+
+
+void Simulateur::ouvrir_liste_crash()
+{
+    system("start notepad \"data\\historique_crash\\historique_crash.txt\"");
+}
+
+
+//Méthode de coloration du graphe
+void Simulateur::algoWelsh()
+{
+    int compteur = 0; //Permet de calculer le degré des sommets
+    vector<int> tabDegre; //Contient les degrés des aéroports
+    vector<int> tabIndicesAeroport; //Contient les indices des aéroports par rapport à m_aeroports
+    vector<int> tabColoration; //Contient l'ensemble des colorations affectées aux indices
+    int stockage1; //Permet les inversions de valeur lors du tri à bulle
+    int stockage2; //Permet les inversions de valeur lors du tri à bulle
+    int couleurProbable = 0; //Contient la couleur probable affectée à un sommet
+    bool finColoration = true; //Indique lorsque le processus de coloration est terminé
+    bool couleurDejaRefCommePrise = false; //Permet d'indiquer lorsqu'une couleur a déjà été référencée comme prise
+    vector<int> couleurDejaPrise; //Permet de déterminer quelles couleurs ont été prises dans les sommets adjacents à un autre
+
+
+    //Détermination de l'ordre décroissant des sommets
+    //Boucle de parcours des aéroports afin de les trier selon degré décroissant
+    for(int i = 0 ; i < int(m_aeroports.size()) ; i++)
+    {
+        //Parcours de l'ensemble des adjacences de l'aéroport
+        for(int j = 0 ; j < int(m_aeroports[i].get_distance_aeroports().size()); j++)
+        {
+            //SI il s'agit d'un aéroport adjacent
+            if(m_aeroports[i].get_distance_aeroports()[j].second != -1)
+            {
+                //On incrémente le degré de l'aéroport initial
+                compteur++;
+            }
+        }
+
+        //On enregistre le degré calculé
+        tabDegre.push_back(compteur);
+
+        //On enregistre l'indice de l'aéroport équivalent
+        tabIndicesAeroport.push_back(i);
+
+        //Réinitialisation du compteur
+        compteur = 0;
+    }
+
+    //Tri à bulle décroissant
+    //Boucle de tri du tableau de Degrés en même temps que celui d'Indice
+    for (int i=0;i<=int(m_aeroports.size())-1;i++)
+    {
+        for(int j=0;j<=int(m_aeroports.size())-2;j++)
+        {
+            //SI les deux valeurs doivent être inversées
+            if (tabDegre[j]<tabDegre[j+1])
+            {
+                //On inverse pour les deux tableaux
+                stockage1=tabDegre[j];
+                stockage2=tabIndicesAeroport[j];
+
+                tabDegre[j]=tabDegre[j+1];
+                tabIndicesAeroport[j]=tabIndicesAeroport[j+1];
+
+                tabDegre[j+1]=stockage1;
+                tabIndicesAeroport[j+1]=stockage2;
+            }
+        }
+    }
+
+
+    //Boucle d'initialisation du tableau de couleurs
+    for(int i = 0 ; i < int(tabDegre.size()) ; i++)
+    {
+        tabColoration.push_back(0);
+    }
+
+    //Attribution de la première couleur
+    tabColoration[0] = 1;
+
+
+    //Boucle de coloration
+    do
+    {
+        //Réinitialisation de la variable à risque
+        finColoration = true;
+
+        //Boucle de parcours des aéroports ordonnés
+        for(int i=0 ; i<int(tabIndicesAeroport.size()) ; i++)
+        {
+            //Réinitialisation du vecteur contenant les couleurs prises par les sommets adjacents à l'aéroport
+            for(int i=0 ; i<int(couleurDejaPrise.size()) ; i++)
+            {
+                couleurDejaPrise.pop_back();
+            }
+
+            //SI le sommet n'a toujours pas été coloré
+            if(tabColoration[i] == 0)
+            {
+
+                //On parcourt ces voisins
+                for(int j = 0 ; j < int(m_aeroports[tabIndicesAeroport[i]].get_distance_aeroports().size()) ; j++)
+                {
+                    //SI le voisin en est un
+                    if(m_aeroports[tabIndicesAeroport[i]].get_distance_aeroports()[j].second != -1)
+                    {
+                        //On essaye alors de trouver la couleur de son voisin en reparcourant le vecteur ordonné
+                        for(int k = 0 ; k < int(tabIndicesAeroport.size()) ; k++)
+                        {
+                            //SI l'indice référencé correspond au sommet voisin
+                            if(tabIndicesAeroport[k] == getIndiceAeroport(m_aeroports[tabIndicesAeroport[i]].get_distance_aeroports()[j].first))
+                            {
+                                //Réinitialisation (position arbitraire) de l'indicateur permettant d'éviter les doublons dans le vecteur de couleurs déjà prises
+                                couleurDejaRefCommePrise = false;
+
+                                //SI ce voisin est coloré
+                                if(tabColoration[k] != 0)
+                                {
+                                    //On cherche à savoir si la coloration n'est pas déjà référencée
+                                    for(int m=0 ; m<int(couleurDejaPrise.size()) ; m++)
+                                    {
+                                        //SI la coloration est déjà référencée
+                                        if(couleurDejaPrise[m] == tabColoration[k])
+                                        {
+                                            //On l'indique
+                                            couleurDejaRefCommePrise = true;
+                                        }
+                                    }
+
+                                    //SI la coloration n'est pas référencée
+                                    if(couleurDejaRefCommePrise == false)
+                                    {
+                                        //On ajoute la couleur au vecteur de couleurs déjà prises
+                                        couleurDejaPrise.push_back(tabColoration[k]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //Tri à bulle décroissant des couleurs déjà prises
+                for (int j=0;j<int(couleurDejaPrise.size());j++)
+                {
+                    for(int k=0;k<int(couleurDejaPrise.size())-j-1;k++)
+                    {
+                        //Les deux valeurs doivent être inversées
+                        if (couleurDejaPrise[k]<couleurDejaPrise[k+1])
+                        {
+                            stockage1=couleurDejaPrise[k];
+
+                            couleurDejaPrise[k]=couleurDejaPrise[k+1];
+
+                            couleurDejaPrise[k+1]=stockage1;
+                        }
+                    }
+                }
+
+                //Affectation de la couleur probable par défaut
+                couleurProbable = 1;
+
+                //SI il y a des couleurs déjà prises, on ne peut pas simplement affecter 1
+                if(int(couleurDejaPrise.size()) > 1)
+                {
+                    //On parcourt le tableau trié de couleurs déjà référencées
+                    for(int j=0 ; j<int(couleurDejaPrise.size())-1 ; j++)
+                    {
+                        //SI on trouve une valeur inférieure
+                        if(couleurDejaPrise[j] > couleurDejaPrise[j+1]+1)
+                        {
+                            //On l'affecte
+                            couleurProbable = couleurDejaPrise[j+1]+1;
+                        }
+                        //SINON
+                        else
+                        {
+                            bool indicBon = true; //Permet d'indiquer que la couleur n'existe pas déjà dans le tableau
+
+                            //Boucle de parcours des couleurs
+                            for(int m=0 ; m<int(couleurDejaPrise.size()) ; m++)
+                            {
+                                //SI la couleur est déjà référencée
+                                if(m != j && couleurDejaPrise[m] == couleurDejaPrise[j]+1)
+                                {
+                                    //On indique que la situation n'est pas bonne
+                                    indicBon = false;
+                                }
+                            }
+
+                            //SI la couleur n'est pas déjà référencée
+                            if(indicBon == true)
+                            {
+                                //On l'affecte
+                                couleurProbable = couleurDejaPrise[j] + 1;
+                            }
+                        }
+                    }
+
+                    bool indicVaut1 = true; //Permet d'indiquer si la couleur vaut, en réalité, 1
+
+                    //Boucle permettant de savoir si la couleur vaut, en réalité, 1
+                    for(int j=0 ; j<int(couleurDejaPrise.size()) ; j++)
+                    {
+                        //SI 1 est déjà pris
+                        if(couleurDejaPrise[j] == 1)
+                        {
+                            //On l'indique
+                            indicVaut1 = false;
+                        }
+                    }
+
+                    //SI 1 n'est pas déjà pris
+                    if(indicVaut1 == true)
+                    {
+                        //On l'affecte
+                        couleurProbable = 1;
+                    }
+                }
+                //SINON SI il y a une seule couleur déjà prise
+                else if(int(couleurDejaPrise.size()) == 1)
+                {
+                    //SI il s'agit d'un 1
+                    if(couleurDejaPrise[0] == 1)
+                    {
+                        //On affecte 2
+                        couleurProbable = 2;
+                    }
+                    //SINON
+                    else
+                    {
+                        //On affecte 1
+                        couleurProbable = 1;
+                    }
+                }
+                //SINON SI il n'y a pas de couleurs déjà prises
+                else if(int(couleurDejaPrise.size()) == 0)
+                {
+                    //On affecte 1
+                    couleurProbable = 1;
+                }
+
+                //On ajoute la couleur au tableau de coloration
+                tabColoration[i] = couleurProbable;
+            }
+        }
+
+        //Boucle permettant de vérifier si la coloration est terminée
+        for(int i=0 ; i<int(tabColoration.size()) ; i++)
+        {
+            //SI la coloration n'est pas terminée
+            if(tabColoration[i] == 0)
+            {
+                //On l'indique
+                finColoration = false;
+            }
+        }
+    }
+    while(finColoration == false); //Tant que la coloration n'est pas terminée
+
+    /*
+
+    for(int i=0 ; i<int(tabIndicesAeroport.size()) ; i++)
+    {
+        cout << "Indice : " << tabIndicesAeroport[i] << endl;
+        cout << "   Coloration : " << tabColoration[i] << endl;
+        cout << endl;
+    }
+*/
+    int compteurCouleur=0;
+    int plageAltitude;
+    int espacement;
+
+
+    for(int i = 0 ; i < int(tabColoration.size());i++)
+    {
+        if(tabColoration[i] > compteurCouleur)
+        {
+            compteurCouleur = tabColoration[i];
+        }
+    }
+
+    //Pour les vols courts courries
+    plageAltitude = 3000;
+
+    espacement = plageAltitude/compteurCouleur;
+
+
+    for(int i = 1; i <= compteurCouleur ; i ++)
+    {
+        for(int j = 0 ; j < int(tabColoration.size()) ; j ++)
+        {
+            if(tabColoration[j] == i)
+            {
+                m_aeroports[tabIndicesAeroport[j]].setAltitudeAvions(5000+espacement*i) ;
+                m_aeroports[tabIndicesAeroport[j]].setAltitudeAvions(8000+espacement*i) ;
+                m_aeroports[tabIndicesAeroport[j]].setAltitudeAvions(11000+espacement*i) ;
+            }
+        }
+    }
+
+    for(int i = 0 ; i < int(m_aeroports.size());i++)
+    {
+        cout << m_aeroports[i].get_nom() << endl;
+
+        for(int j = 0 ; j < 3 ; j++)
+        {
+            cout<< m_aeroports[i].getAltitudesAvions(j) <<endl;
+        }
+
+        cout << endl;
+    }
+}
+
+
+void Simulateur::rechercheIntemperie(Ressources& motherShip)
+{
+
+    int indicCoteEntree = 0;
+    int indicCoteSortie = 0;
+
+    Coord A;
+    Coord B;
+    Coord C;
+    Coord D;
+
+    Coord ptIntersectionEntree;
+    Coord ptIntersectionSortie;
+
+    //Parcours des intempéries
+    for(int i = 0 ; i < int (m_listeIntemperies.size()) ; i++)
+    {
+        A.set_coord_x(m_listeIntemperies[i]->get_coordIntemperieX());
+        A.set_coord_y(m_listeIntemperies[i]->get_coordIntemperieY());
+
+        B.set_coord_x(m_listeIntemperies[i]->get_coordIntemperieX()+motherShip.getBIT(25)->w/7);
+        B.set_coord_y(m_listeIntemperies[i]->get_coordIntemperieY());
+
+        C.set_coord_x(m_listeIntemperies[i]->get_coordIntemperieX()+motherShip.getBIT(25)->w/7);
+        C.set_coord_y(m_listeIntemperies[i]->get_coordIntemperieY()+motherShip.getBIT(25)->h/7);
+
+        D.set_coord_x(m_listeIntemperies[i]->get_coordIntemperieX());
+        D.set_coord_y(m_listeIntemperies[i]->get_coordIntemperieY()+motherShip.getBIT(25)->h/7);
+
+        //Parcours de l'ensemble des routes afin de tester si l'une d'elles est touchée par l'intempérie
+        for(int j = 0 ; j < int(m_ensembleRoutes.size()) ; j++)
+        {
+
+            indicCoteEntree = 0;
+            indicCoteSortie = 0;
+            ptIntersectionEntree.set_coord_x(0);
+            ptIntersectionEntree.set_coord_y(0);
+            ptIntersectionSortie.set_coord_x(0);
+            ptIntersectionSortie.set_coord_y(0);
+
+            if((m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_x() < m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_x() && A.get_coord_x() >= m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_x() - motherShip.getBIT(25)->w/7 && A.get_coord_x() <= m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_x())
+                    || (m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_x() < m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_x() && A.get_coord_x() >= m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_x() - motherShip.getBIT(25)->w/7 && A.get_coord_x() <= m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_x()))
+            {
+                if((m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_y() < m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_y() && A.get_coord_y() >= m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_y() - motherShip.getBIT(25)->h/7 && A.get_coord_y() <= m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_y())
+                        || (m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_y() < m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_y() && A.get_coord_y() >= m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_y() - motherShip.getBIT(25)->h/7 && A.get_coord_y() <= m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_y()))
+                {
+                    //Entree dans coté A-D
+                    if(m_ensembleRoutes[j]->getARoute()*A.get_coord_x()+m_ensembleRoutes[j]->getBRoute() <= D.get_coord_y() && m_ensembleRoutes[j]->getARoute()*A.get_coord_x()+m_ensembleRoutes[j]->getBRoute() > A.get_coord_y() )
+                    {
+                        if(indicCoteEntree == 0)
+                        {
+                            indicCoteEntree = 1;
+
+                            ptIntersectionEntree.set_coord_x(A.get_coord_x());
+                            ptIntersectionEntree.set_coord_y(m_ensembleRoutes[j]->getARoute()*A.get_coord_x()+m_ensembleRoutes[j]->getBRoute());
+                        }
+                        else
+                        {
+                            indicCoteSortie = 1;
+
+                            ptIntersectionSortie.set_coord_x(A.get_coord_x());
+                            ptIntersectionSortie.set_coord_y(m_ensembleRoutes[j]->getARoute()*A.get_coord_x()+m_ensembleRoutes[j]->getBRoute());
+                        }
+
+                    }
+
+                    //Entree entre B-C
+                    if(m_ensembleRoutes[j]->getARoute()*B.get_coord_x()+m_ensembleRoutes[j]->getBRoute() < C.get_coord_y() && m_ensembleRoutes[j]->getARoute()*B.get_coord_x()+m_ensembleRoutes[j]->getBRoute()> B.get_coord_y() )
+                    {
+                        if(indicCoteEntree == 0)
+                        {
+                            indicCoteEntree = 2;
+
+                            ptIntersectionEntree.set_coord_x(B.get_coord_x());
+                            ptIntersectionEntree.set_coord_y(m_ensembleRoutes[j]->getARoute()*B.get_coord_x()+m_ensembleRoutes[j]->getBRoute());
+                        }
+                        else
+                        {
+                            indicCoteSortie = 2;
+
+                            ptIntersectionSortie.set_coord_x(B.get_coord_x());
+                            ptIntersectionSortie.set_coord_y(m_ensembleRoutes[j]->getARoute()*B.get_coord_x()+m_ensembleRoutes[j]->getBRoute());
+                        }
+
+                    }
+
+                    //Entree dans C-D
+                    if((A.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute() < C.get_coord_x() && (A.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute() > D.get_coord_x())
+                    {
+                        if(indicCoteEntree == 0)
+                        {
+
+                            indicCoteEntree = 3;
+
+                            ptIntersectionEntree.set_coord_y(C.get_coord_y());
+                            ptIntersectionEntree.set_coord_x((C.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute());
+                        }
+                        else
+                        {
+                            indicCoteSortie = 3;
+
+                            ptIntersectionSortie.set_coord_y(C.get_coord_y());
+                            ptIntersectionSortie.set_coord_x((C.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute());
+                        }
+
+                    }
+
+                    //Entree dans B-A
+                    if((D.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute() < B.get_coord_x() && (D.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute() > A.get_coord_x())
+                    {
+                        if(indicCoteEntree == 0)
+                        {
+                            indicCoteEntree = 4;
+
+
+                            ptIntersectionEntree.set_coord_y(B.get_coord_y());
+                            ptIntersectionEntree.set_coord_x((B.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute());
+                        }
+                        else
+                        {
+                            indicCoteSortie = 4;
+
+                            ptIntersectionSortie.set_coord_y(B.get_coord_y());
+                            ptIntersectionSortie.set_coord_x((B.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute());
+                        }
+                    }
+
+                    cout << m_ensembleRoutes[j]->getAeroport(0)->get_nom() << " a " << m_ensembleRoutes[j]->getAeroport(1)->get_nom() << endl;
+                    cout << indicCoteEntree << " et " << indicCoteSortie << endl << endl;
+
+
+                    float xA = ptIntersectionEntree.get_coord_x();
+                    float xB = ptIntersectionSortie.get_coord_x();
+
+                    float yA = ptIntersectionEntree.get_coord_y();
+                    float yB = ptIntersectionSortie.get_coord_y();
+
+
+                    float distanceEntreDeuxPointsIntemp = sqrt((xA-xB)*(xA-xB)+(yA-yB)*(yA-yB));
+                    cout << distanceEntreDeuxPointsIntemp << endl;
+
+                    float xC = m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_x();
+                    float yC = m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_y();
+
+                    float distanceDepIntemp = sqrt((xA-xC)*(xA-xC)+(yA-yC)*(yA-yC));
+
+                    distanceDepIntemp = distanceDepIntemp*4000/273.61;
+                    distanceEntreDeuxPointsIntemp = distanceEntreDeuxPointsIntemp*4000/273.61;
+
+                    cout << "Distance dep - intemp " << distanceDepIntemp << "km" << endl;
+                    cout << "Distance intemp - intemp " << distanceEntreDeuxPointsIntemp << "km"<< endl;
+                }
+            }
+        }
+    }
+}
+
+//Méthode d'affichage du quadrillage de la map
+void Simulateur::affichageQuadrillage(Ressources &motherShip)
+{
+    //Boucle d'affichage des colonnes
+    for(int i = 0 ; i < 1500 ; i+=8)
+    {
+        rect(motherShip.getBIT(0), i,0,i+8,750,makecol(0,0,0));
+    }
+
+    //Boucle d'affichage des lignes
+    for(int i = 0 ; i < 750 ; i+=8)
+    {
+        rect(motherShip.getBIT(0), 0,i,1500,i+8,makecol(0,0,0));
+    }
+}
