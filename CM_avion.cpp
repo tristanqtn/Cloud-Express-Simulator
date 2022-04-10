@@ -447,7 +447,7 @@ bool Avion::actualisationSurbrillanceAvion(vector<Aeroport> m_aeroports, bool ty
             }
 
             //SI la souris est trop haute pour que l'overlay s'affiche entièrement
-            if(y - overlay->h/coefficientReducteur < 0)
+            if(y - overlay->h/coefficientReducteur+15 < 0)
             {
                 //L'overlay devrait être inversé
                 indicSensAffichage = -1;
@@ -487,7 +487,7 @@ bool Avion::actualisationSurbrillanceAvion(vector<Aeroport> m_aeroports, bool ty
             //SINON, l'avion n'a pas de destination
             else
             {
-                textprintf_centre_ex(doubleBuffer,titre,x,y+80,makecol(255, 255, 255),-1,"%s - ...", convertisseurStringChar(getNomAeroportInitial()));
+                textprintf_centre_ex(doubleBuffer,titre,x,y+80,makecol(255, 255, 255),-1,"%s - ...", convertisseurStringChar(getNomAeroportA()));
             }
 
 
@@ -567,9 +567,14 @@ bool Avion::actualisationSurbrillanceAvion(vector<Aeroport> m_aeroports, bool ty
                 textprintf_centre_ex(doubleBuffer,texte,x,y+340,couleurTexte,-1,"%dkm/h", get_vitesse());
             }
             //SINON SI l'avion est dans une phase de démarrage
-            else
+            else if(get_action_en_cours() == 2)
             {
-                textprintf_centre_ex(doubleBuffer,texte,x,y+340,couleurTexte,-1,"Demarrrage");
+                textprintf_centre_ex(doubleBuffer,texte,x,y+340,couleurTexte,-1,"Decollage");
+            }
+            //SINON SI l'avion est dans une phase d'atterrissage
+            else if(get_action_en_cours() == 5)
+            {
+                textprintf_centre_ex(doubleBuffer,texte,x,y+340,couleurTexte,-1,"Atterrissage");
             }
 
             //Affichage de l'état du vol
@@ -613,7 +618,7 @@ bool Avion::actualisationSurbrillanceAvion(vector<Aeroport> m_aeroports, bool ty
             //SINON, l'avion n'a pas de destination
             else
             {
-                textprintf_centre_ex(doubleBuffer,titre,x,y-375,makecol(255, 255, 255),-1,"%s - ...", convertisseurStringChar(getNomAeroportInitial()));
+                textprintf_centre_ex(doubleBuffer,titre,x,y-375,makecol(255, 255, 255),-1,"%s - ...", convertisseurStringChar(getNomAeroportA()));
             }
 
 
@@ -693,9 +698,14 @@ bool Avion::actualisationSurbrillanceAvion(vector<Aeroport> m_aeroports, bool ty
                 textprintf_centre_ex(doubleBuffer,texte,x,y-115,couleurTexte,-1,"%dkm/h", get_vitesse());
             }
             //SINON SI l'avion est dans une phase de démarrage
-            else
+            else if(get_action_en_cours() == 2)
             {
-                textprintf_centre_ex(doubleBuffer,texte,x,y-115,couleurTexte,-1,"Demarrrage");
+                textprintf_centre_ex(doubleBuffer,texte,x,y-115,couleurTexte,-1,"Decollage");
+            }
+            //SINON SI l'avion est dans une phase d'atterrissage
+            else if(get_action_en_cours() == 5)
+            {
+                textprintf_centre_ex(doubleBuffer,texte,x,y-115,couleurTexte,-1,"Atterrissage");
             }
 
             //Affichage de l'état du vol
@@ -801,6 +811,16 @@ bool Avion::actualiser_action_avion()
                 actualisationPositionVol();
                 rendu = consommer_kerosene();
                 setDistanceParcourue(getDistanceParcourue() + (float)get_vitesse() * (float)UT/60.0);
+
+                if(m_compteurDetournement > 1)
+                {
+                    m_compteurDetournement--;
+                }
+                else if(m_compteurDetournement == 1)
+                {
+                    m_quantite_kerosene = 0;
+                    cout << "Explosion du vol " << m_immatriculation << endl;
+                }
             }
 
             //cout << "Vol" << endl;
@@ -1188,3 +1208,31 @@ void Avion::set_vitesse(int vitesse)
     m_vitesse = vitesse;
 }
 
+
+//Méthode de détournement d'avion
+void Avion::detournement_avion()
+{
+    float hypothenuse = 0; //Contient l'hypothénuse du trajet initial
+    float xAlea = 0; //Contient la coordonnée aléatoire en X
+    float yAlea = 0; //Contient la coordonnée aléatoire en Y
+
+    //Calcul de l'hypothénuse du trajet de base
+    hypothenuse = sqrt((m_coordArrivee.first-m_coordDepart.first)*(m_coordArrivee.first-m_coordDepart.first) + (m_coordArrivee.second-m_coordDepart.second)*(m_coordArrivee.second-m_coordDepart.second));
+
+    //Génération aléatoire de la coordonnée en X
+    xAlea = rand()%(int(hypothenuse)+1);
+
+    //Calcul de la coordonnée en Y en fonction des deux données précédemment calculées
+    yAlea = sqrt(hypothenuse*hypothenuse - xAlea*xAlea);
+
+    m_vitesse = 200;
+
+    //Actualisation de la nouvelle direction de l'avion
+    parametrer_nouveau_vol(get_coord().get_coord_x(), get_coord().get_coord_y(), get_coord().get_coord_x()+xAlea, get_coord().get_coord_y()+yAlea);
+
+    //Indication que le vol est infini... vers la mort
+    m_duree_vol = INT_MAX;
+
+    //Initialisation de la durée avant explosion
+    m_compteurDetournement = rand()%(10 - 5 + 1) + 5;
+}

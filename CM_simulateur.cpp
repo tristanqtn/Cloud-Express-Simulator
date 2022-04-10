@@ -393,9 +393,22 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
                 indicF = true;
         }
 
+        //Parcours de l'ensemble des aéroports pour voir si la souris est au dessus de l'un d'eux
+        for(int i=0 ; i<int(m_aeroports.size()) ; i++)
+        {
+            m_aeroports[i].actualisationPointeurLocalisation(motherShip, m_aeroports, indicClic, indicEchap);
+        }
 
-        //Affichage de l'horloge
-        m_horlogeGMT.afficher_heure_date(motherShip.getBIT(0), motherShip.getFONT(6), motherShip.getFONT(5));
+        //Parcours de l'ensemble des routes aériennes pour voir si la souris est au dessus de l'une d'elles
+        for(int i=0 ; i<int(m_ensembleRoutes.size()) ; i++)
+        {
+            m_ensembleRoutes[i]->actualisationSurbrillanceRoute(motherShip, indicClic, indicEchap);
+        }
+        //Parcours de l'ensemble des crash afin de les afficher
+        for(int i=0 ; i<int(m_coord_crash.size()) ; i++)
+        {
+            masked_blit(motherShip.getBIT(37), motherShip.getBIT(0), 0, 0, m_coord_crash[i].get_coord_x(), m_coord_crash[i].get_coord_y()-motherShip.getBIT(37)->h/2, motherShip.getBIT(37)->w,motherShip.getBIT(37)->h);
+        }
 
         //Boucle d'affichage des intempéries
         for(int i=0 ; i<int(m_listeIntemperies.size()) ; i++)
@@ -403,6 +416,29 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
             //On affiche l'intempérie
             m_listeIntemperies[i]->afficherIntemperie(motherShip);
         }
+
+        //Parcours de l'ensemble des avions afin de les afficher
+        for(int i=0 ; i<int(m_flotte_avions.size()) ; i++)
+        {
+            m_flotte_avions[i]->affichageAvionCarte(motherShip.getBIT(0), motherShip.getBIT(18), motherShip.getBIT(19), motherShip.getBIT(20));
+        }
+
+        //Parcours de l'ensemble des avions afin de voir si l'utilsiateur souhaite afficher leur overlay
+        for(int i=0 ; i<int(m_flotte_avions.size()) ; i++)
+        {
+            bool suppression = m_flotte_avions[i]->actualisationSurbrillanceAvion(m_aeroports, true, m_flotte_avions[i]->get_coord().get_coord_x(), m_flotte_avions[i]->get_coord().get_coord_y(),motherShip.getBIT(0), motherShip.getBIT(26), motherShip.getBIT(30), motherShip.getBIT(27), motherShip.getBIT(28), motherShip.getBIT(29), motherShip.getFONT(7), motherShip.getFONT(2), motherShip.getFONT(10));
+            if(suppression == true && m_flotte_avions[i]->get_action_en_cours() == 3)
+            {
+                    for(size_t t=0; t<m_ensembleRoutes.size(); t++)
+                    {
+                        m_ensembleRoutes[t]->supprimer_avion(m_flotte_avions[i]->get_immatriculation());
+                    }
+                    supprimer_avion_on_click(m_flotte_avions[i]->get_immatriculation());
+            }
+        }
+
+        //Affichage de l'horloge
+        m_horlogeGMT.afficher_heure_date(motherShip.getBIT(0), motherShip.getFONT(6), motherShip.getFONT(5));
 
         //Affichage du rectangle de droite
         rectfill(motherShip.getBIT(0), coorXRectangleDroite, 0, SCREEN_W, SCREEN_H, makecol(41, 49, 51));
@@ -501,43 +537,6 @@ void Simulateur::deroulementGlobal(Ressources &motherShip, bool &indicClic, bool
             else //SPEED 2
             {
                 masked_stretch_blit(motherShip.getBIT(17), motherShip.getBIT(0), 0, 0, motherShip.getBIT(17)->w, motherShip.getBIT(17)->h, coorXRectangleDroite+220, 670, motherShip.getBIT(17)->w/3-9, motherShip.getBIT(17)->h/3-9);
-            }
-        }
-
-        //Parcours de l'ensemble des aéroports pour voir si la souris est au dessus de l'un d'eux
-        for(int i=0 ; i<int(m_aeroports.size()) ; i++)
-        {
-            m_aeroports[i].actualisationPointeurLocalisation(motherShip, m_aeroports, indicClic, indicEchap);
-        }
-
-        //Parcours de l'ensemble des routes aériennes pour voir si la souris est au dessus de l'une d'elles
-        for(int i=0 ; i<int(m_ensembleRoutes.size()) ; i++)
-        {
-            m_ensembleRoutes[i]->actualisationSurbrillanceRoute(motherShip, indicClic, indicEchap);
-        }
-        //Parcours de l'ensemble des crash afin de les afficher
-        for(int i=0 ; i<int(m_coord_crash.size()) ; i++)
-        {
-            masked_blit(motherShip.getBIT(37), motherShip.getBIT(0), 0, 0, m_coord_crash[i].get_coord_x(), m_coord_crash[i].get_coord_y()-motherShip.getBIT(37)->h/2, motherShip.getBIT(37)->w,motherShip.getBIT(37)->h);
-        }
-
-        //Parcours de l'ensemble des avions afin de les afficher
-        for(int i=0 ; i<int(m_flotte_avions.size()) ; i++)
-        {
-            m_flotte_avions[i]->affichageAvionCarte(motherShip.getBIT(0), motherShip.getBIT(18), motherShip.getBIT(19), motherShip.getBIT(20));
-        }
-
-        //Parcours de l'ensemble des avions afin de voir si l'utilsiateur souhaite afficher leur overlay
-        for(int i=0 ; i<int(m_flotte_avions.size()) ; i++)
-        {
-            bool suppression = m_flotte_avions[i]->actualisationSurbrillanceAvion(m_aeroports, true, m_flotte_avions[i]->get_coord().get_coord_x(), m_flotte_avions[i]->get_coord().get_coord_y(),motherShip.getBIT(0), motherShip.getBIT(26), motherShip.getBIT(30), motherShip.getBIT(27), motherShip.getBIT(28), motherShip.getBIT(29), motherShip.getFONT(7), motherShip.getFONT(2), motherShip.getFONT(10));
-            if(suppression == true && m_flotte_avions[i]->get_action_en_cours() == 3)
-            {
-                    for(size_t t=0; t<m_ensembleRoutes.size(); t++)
-                    {
-                        m_ensembleRoutes[t]->supprimer_avion(m_flotte_avions[i]->get_immatriculation());
-                    }
-                    supprimer_avion_on_click(m_flotte_avions[i]->get_immatriculation());
             }
         }
 
@@ -1038,24 +1037,65 @@ void Simulateur::menuESC(bool &done, bool &finDeroulement, bool &indicClic, bool
 //Méthode du menu principal de choix pendant la simulation
 void Simulateur::menuPrincipal(Ressources &motherShip, bool &indicClic, int &etat)
 {
+    bool indicDetournement = false; //Permet de savoir si l'option de détournement doit être affichée ou non
+    bool indicDetournement2 = false; //Permet de savoir si il reste des avions non détournés
+    int indice_hasard = 0; //Contient l'indice de l'avion visé par les événements aléatoires
+
+    //On parcourt l'ensemble des routes aériennes afin de voir si un avion est en vol
+    for(int i=0 ; i<int(m_ensembleRoutes.size()) ; i++)
+    {
+        //SI la route contient un avion
+        if(int(m_ensembleRoutes[i]->getAvionsPresents().size()) > 0)
+        {
+            //On indique que le détournement est possible
+            indicDetournement = true;
+        }
+    }
+
+    //On parcourt l'ensemble des avions afin de voir s'il en reste des non détournés
+    for(int i=0 ; i<int(m_flotte_avions.size()) ; i++)
+    {
+        //SI l'avion n'est pas détourné
+        if(m_flotte_avions[i]->get_etatVol() != 2)
+        {
+            //On indique que le détournement est possible
+            indicDetournement2 = true;
+        }
+    }
+
+    //SI les deux indicateurs de validité du détournement sont validés
+    if(indicDetournement == true && indicDetournement2 == true)
+    {
+        //On indique que le détournement est possible
+        indicDetournement = true;
+    }
+    //SINON
+    else
+    {
+        //On indique que le détournement n'est pas possible
+        indicDetournement = false;
+    }
+
     //Affichage du menu
     textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(3), 1250, 30, makecol(255,255,255),-1, "Choix");
     textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1190, 150, makecol(255,255,255),-1, "Ajouter un avion");
     textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1190, 200, makecol(255,255,255),-1, "Supprimer un avion");
     textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1190, 250, makecol(255,255,255),-1, "Ajouter intemperie");
 
-    //SI la simulation dispose d'avions
+    //SI la simulation dispose d'avions, on peut leur créer des fuites
     if(int(m_flotte_avions.size()) > 0)
     {
         //On propose le scénario de la duite de réservoir
         textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1190, 300, makecol(255, 255, 255), -1, "Fuite de reservoir");
+    }
 
-        //On propose également le scénario de détournement d'avion
+    //SI la simulation dispose d'avions en vol, on peut en détourner
+    if(indicDetournement == true)
+    {
+        //On propose le scénario de la duite de réservoir
         textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1190, 350, makecol(255, 255, 255), -1, "Detournement d'avion");
     }
 
-
-     //cout << mouse_x << " et " << mouse_y << endl;
     //SI la souris passe sur "Ajouter un avion"
     if(mouse_x > 1190 && mouse_x < 1422 && mouse_y > 150 && mouse_y < 180)
     {
@@ -1104,23 +1144,31 @@ void Simulateur::menuPrincipal(Ressources &motherShip, bool &indicClic, int &eta
         if(mouse_b & 1 && indicClic == false)
         {
             indicClic = true; //Indication que le clic gauche est pressé
-            bool ok = false;
+            bool ok = false; //Indicateur permettant de savoir si la fuite a pu se faire
+
+            //Boucle de blindage de la fuite
             do
             {
-                int indice_hasard = rand()%m_flotte_avions.size();
+                //Génération de l'indice aléatoire
+                indice_hasard = rand()%m_flotte_avions.size();
+
+                //SI l'avion n'est pas en préparation, on peut lui appliquer une fuite
                 if(m_flotte_avions[indice_hasard]->get_action_en_cours() != 0)
                 {
                     m_flotte_avions[indice_hasard]->set_etat_reservoir(true);
                     ok = true;
                 }
-            }while(ok == false);
-            // FUITE DE RESERVOIR ICI
-            // PTET RAJOUTER UN ATTRIBUT A AVION HISTOIRE DE POUVOIR LAFFICHER DIFFEREMMENT
+            }
+            while(ok == false);
+
+            //On actualise l'état du vol
+            m_flotte_avions[indice_hasard]->set_etatVol(1);
         }
     }
 
+
     //SINON SI la souris passe sur "Détournement d'avion"
-    else if(mouse_x > 1190 && mouse_x < 1485 && mouse_y > 350 && mouse_y < 380 && int(m_flotte_avions.size()) > 0)
+    else if(mouse_x > 1190 && mouse_x < 1485 && mouse_y > 350 && mouse_y < 380 && indicDetournement == true)
     {
         textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1190, 350, makecol(25,255,52),-1, "Detournement d'avion");//Changement de couleur du texte
 
@@ -1128,11 +1176,26 @@ void Simulateur::menuPrincipal(Ressources &motherShip, bool &indicClic, int &eta
         if(mouse_b & 1 && indicClic == false)
         {
             indicClic = true; //Indication que le clic gauche est pressé
+            bool ok = false; //Indicateur permettant de savoir si la fuite a pu se faire
 
-            //int indice_hasard = rand()%m_flotte_avions.size();
-            //m_flotte_avions[indice_hasard]->set_etat_reservoir(true);
-            // DETOURNEMENT ICI
-            // PTET RAJOUTER UN ATTRIBUT A AVION HISTOIRE DE POUVOIR LAFFICHER DIFFEREMMENT
+            //Boucle de blindage du détournement
+            do
+            {
+                //Génération de l'indice aléatoire
+                indice_hasard = rand()%m_flotte_avions.size();
+
+                //SI l'avion est bien en vol et n'est pas déjà détourné
+                if(m_flotte_avions[indice_hasard]->get_action_en_cours() == 3 && m_flotte_avions[indice_hasard]->get_etatVol() != 2)
+                {
+                    //On le détourne
+                    m_flotte_avions[indice_hasard]->detournement_avion();
+                    ok = true;
+                }
+            }
+            while(ok == false);
+
+            //On actualise l'état du vol
+            m_flotte_avions[indice_hasard]->set_etatVol(2);
         }
     }
 }
@@ -1900,6 +1963,21 @@ void Simulateur::rechercheIntemperie(Ressources& motherShip)
     Coord ptIntersectionEntree;
     Coord ptIntersectionSortie;
 
+    if(int(m_listeIntemperies.size()) > 0)
+    {
+        //Boucle de réinitialisation de l'ensemble des cases de la route
+        for(int i=0 ; i<int(m_ensembleRoutes.size()) ; i++)
+        {
+            for(int j=0 ; j<int(m_ensembleRoutes[i]->getTabEtats().size()) ; j++)
+            {
+                for(int k=0 ; k<12 ; k++)
+                {
+                    m_ensembleRoutes[i]->actualiserCase(j, k, 0);
+                }
+            }
+        }
+    }
+
     //Parcours des intempéries
     for(int i = 0 ; i < int (m_listeIntemperies.size()) ; i++)
     {
@@ -2043,12 +2121,9 @@ void Simulateur::rechercheIntemperie(Ressources& motherShip)
                                     //SI on a de la pluie
                                     if(m_listeIntemperies[i]->get_type() == 1)
                                     {
-                                        cout << "altitude avion : " << m_ensembleRoutes[j]->getAvionsPresents()[m]->get_altitude() << endl;
-                                        cout << "altitude pluie : " <<m_listeIntemperies[i]->getAltitudes() << endl;
                                         //SI L'avion est en dessous du nuage
                                         if(m_ensembleRoutes[j]->getAvionsPresents()[m]->get_altitude() < m_listeIntemperies[i]->getAltitudes())
                                         {
-                                            cout << "OK"<<endl;
                                             m_ensembleRoutes[j]->getAvionsPresents()[m]->changementVitesse(1);
                                         }
                                     }
@@ -2072,12 +2147,9 @@ void Simulateur::rechercheIntemperie(Ressources& motherShip)
                                     //SI on a de la pluie
                                     if(m_listeIntemperies[i]->get_type() == 1)
                                     {
-                                        cout << "altitude avion : " << m_ensembleRoutes[j]->getAvionsPresents()[m]->get_altitude() << endl;
-                                        cout << "altitude pluie : " <<m_listeIntemperies[i]->getAltitudes() << endl;
                                         //SI L'avion est en dessous du nuage
                                         if(m_ensembleRoutes[j]->getAvionsPresents()[m]->get_altitude() < m_listeIntemperies[i]->getAltitudes())
                                         {
-                                            cout << "OK"<<endl;
                                             m_ensembleRoutes[j]->getAvionsPresents()[m]->changementVitesse(1);
                                         }
                                     }
@@ -2112,21 +2184,19 @@ void Simulateur::rechercheIntemperie(Ressources& motherShip)
                                 if(m_ensembleRoutes[j]->getTabEtats()[k][m] == 0)
                                 {
                                     //SI la case est dans la plage de valeur de l'intempérie
-                                    cout <<  "altitude pluie :: " << m_listeIntemperies[i]->getAltitudes()<<endl;
-                                    cout << " valeur :  " <<  5750+m*750 <<endl;
                                     if(k*100 >= distanceDepIntemp && k*100 <= distanceDepIntemp + distanceEntreDeuxPointsIntemp && 5750+m*750 == m_listeIntemperies[i]->getAltitudes())
                                     {
                                         //SI il s'agit du vent
                                         if(m_listeIntemperies[i]->get_type() == 2)
                                         {
                                             //On remplit la case
-                                            m_ensembleRoutes[j]->actualiserCase(k, m, 2);
+                                            m_ensembleRoutes[j]->actualiserCase(k, 11-m, 2);
                                         }
                                         //SINON il s'agit de pluie
                                         else
                                         {
                                             //On applique l'intempérie à toutes les cases en dessous
-                                            for(int n=m ; n<12 ; n++)
+                                            for(int n=(11-m) ; n<12 ; n++)
                                             {
                                                 m_ensembleRoutes[j]->actualiserCase(k, n, 1);
                                             }
@@ -2136,7 +2206,6 @@ void Simulateur::rechercheIntemperie(Ressources& motherShip)
                             }
                         }
                     }
-
                 }
             }
         }
@@ -2144,226 +2213,6 @@ void Simulateur::rechercheIntemperie(Ressources& motherShip)
 }
 
 
-//void Simulateur::rechercheIntemperie(Ressources& motherShip)
-//{
-//
-//    int indicCoteEntree = 0;
-//    int indicCoteSortie = 0;
-//
-//    Coord A;
-//    Coord B;
-//    Coord C;
-//    Coord D;
-//
-//    Coord ptIntersectionEntree;
-//    Coord ptIntersectionSortie;
-//
-//    if(int(m_listeIntemperies.size()) > 0)
-//    {
-//        //Boucle de réinitialisation de l'ensemble des cases de la route
-//        for(int i=0 ; i<int(m_ensembleRoutes.size()) ; i++)
-//        {
-//            for(int j=0 ; j<int(m_ensembleRoutes[i]->getTabEtats().size()) ; j++)
-//            {
-//                for(int k=0 ; k<12 ; k++)
-//                {
-//                    m_ensembleRoutes[i]->actualiserCase(j, k, 0);
-//                }
-//            }
-//        }
-//    }
-//
-//    //Parcours des intempéries
-//    for(int i = 0 ; i < int (m_listeIntemperies.size()) ; i++)
-//    {
-//        A.set_coord_x(m_listeIntemperies[i]->get_coordIntemperieX());
-//        A.set_coord_y(m_listeIntemperies[i]->get_coordIntemperieY());
-//
-//        B.set_coord_x(m_listeIntemperies[i]->get_coordIntemperieX()+motherShip.getBIT(25)->w/7);
-//        B.set_coord_y(m_listeIntemperies[i]->get_coordIntemperieY());
-//
-//        C.set_coord_x(m_listeIntemperies[i]->get_coordIntemperieX()+motherShip.getBIT(25)->w/7);
-//        C.set_coord_y(m_listeIntemperies[i]->get_coordIntemperieY()+motherShip.getBIT(25)->h/7);
-//
-//        D.set_coord_x(m_listeIntemperies[i]->get_coordIntemperieX());
-//        D.set_coord_y(m_listeIntemperies[i]->get_coordIntemperieY()+motherShip.getBIT(25)->h/7);
-//
-//        //Parcours de l'ensemble des routes afin de tester si l'une d'elles est touchée par l'intempérie
-//        for(int j = 0 ; j < int(m_ensembleRoutes.size()) ; j++)
-//        {
-//
-//            indicCoteEntree = 0;
-//            indicCoteSortie = 0;
-//            ptIntersectionEntree.set_coord_x(0);
-//            ptIntersectionEntree.set_coord_y(0);
-//            ptIntersectionSortie.set_coord_x(0);
-//            ptIntersectionSortie.set_coord_y(0);
-//
-//            if((m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_x() < m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_x() && A.get_coord_x() >= m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_x() - motherShip.getBIT(25)->w/7 && A.get_coord_x() <= m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_x())
-//                    || (m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_x() < m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_x() && A.get_coord_x() >= m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_x() - motherShip.getBIT(25)->w/7 && A.get_coord_x() <= m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_x()))
-//            {
-//                if((m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_y() < m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_y() && A.get_coord_y() >= m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_y() - motherShip.getBIT(25)->h/7 && A.get_coord_y() <= m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_y())
-//                        || (m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_y() < m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_y() && A.get_coord_y() >= m_ensembleRoutes[j]->getAeroport(1)->get_position().get_coord_y() - motherShip.getBIT(25)->h/7 && A.get_coord_y() <= m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_y()))
-//                {
-//                    //Entree dans coté A-D
-//                    if(m_ensembleRoutes[j]->getARoute()*A.get_coord_x()+m_ensembleRoutes[j]->getBRoute() <= D.get_coord_y() && m_ensembleRoutes[j]->getARoute()*A.get_coord_x()+m_ensembleRoutes[j]->getBRoute() > A.get_coord_y() )
-//                    {
-//                        if(indicCoteEntree == 0)
-//                        {
-//                            indicCoteEntree = 1;
-//
-//                            ptIntersectionEntree.set_coord_x(A.get_coord_x());
-//                            ptIntersectionEntree.set_coord_y(m_ensembleRoutes[j]->getARoute()*A.get_coord_x()+m_ensembleRoutes[j]->getBRoute());
-//                        }
-//                        else
-//                        {
-//                            indicCoteSortie = 1;
-//
-//                            ptIntersectionSortie.set_coord_x(A.get_coord_x());
-//                            ptIntersectionSortie.set_coord_y(m_ensembleRoutes[j]->getARoute()*A.get_coord_x()+m_ensembleRoutes[j]->getBRoute());
-//                        }
-//
-//                    }
-//
-//                    //Entree entre B-C
-//                    if(m_ensembleRoutes[j]->getARoute()*B.get_coord_x()+m_ensembleRoutes[j]->getBRoute() < C.get_coord_y() && m_ensembleRoutes[j]->getARoute()*B.get_coord_x()+m_ensembleRoutes[j]->getBRoute()> B.get_coord_y() )
-//                    {
-//                        if(indicCoteEntree == 0)
-//                        {
-//                            indicCoteEntree = 2;
-//
-//                            ptIntersectionEntree.set_coord_x(B.get_coord_x());
-//                            ptIntersectionEntree.set_coord_y(m_ensembleRoutes[j]->getARoute()*B.get_coord_x()+m_ensembleRoutes[j]->getBRoute());
-//                        }
-//                        else
-//                        {
-//                            indicCoteSortie = 2;
-//
-//                            ptIntersectionSortie.set_coord_x(B.get_coord_x());
-//                            ptIntersectionSortie.set_coord_y(m_ensembleRoutes[j]->getARoute()*B.get_coord_x()+m_ensembleRoutes[j]->getBRoute());
-//                        }
-//
-//                    }
-//
-//                    //Entree dans C-D
-//                    if((A.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute() < C.get_coord_x() && (A.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute() > D.get_coord_x())
-//                    {
-//                        if(indicCoteEntree == 0)
-//                        {
-//
-//                            indicCoteEntree = 3;
-//
-//                            ptIntersectionEntree.set_coord_y(C.get_coord_y());
-//                            ptIntersectionEntree.set_coord_x((C.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute());
-//                        }
-//                        else
-//                        {
-//                            indicCoteSortie = 3;
-//
-//                            ptIntersectionSortie.set_coord_y(C.get_coord_y());
-//                            ptIntersectionSortie.set_coord_x((C.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute());
-//                        }
-//
-//                    }
-//
-//                    //Entree dans B-A
-//                    if((D.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute() < B.get_coord_x() && (D.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute() > A.get_coord_x())
-//                    {
-//                        if(indicCoteEntree == 0)
-//                        {
-//                            indicCoteEntree = 4;
-//
-//
-//                            ptIntersectionEntree.set_coord_y(B.get_coord_y());
-//                            ptIntersectionEntree.set_coord_x((B.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute());
-//                        }
-//                        else
-//                        {
-//                            indicCoteSortie = 4;
-//
-//                            ptIntersectionSortie.set_coord_y(B.get_coord_y());
-//                            ptIntersectionSortie.set_coord_x((B.get_coord_y()-m_ensembleRoutes[j]->getBRoute())/m_ensembleRoutes[j]->getARoute());
-//                        }
-//                    }
-//
-//                    //cout << m_ensembleRoutes[j]->getAeroport(0)->get_nom() << " a " << m_ensembleRoutes[j]->getAeroport(1)->get_nom() << endl;
-//                    //cout << indicCoteEntree << " et " << indicCoteSortie << endl << endl;
-//
-//
-//                    float xA = ptIntersectionEntree.get_coord_x();
-//                    float xB = ptIntersectionSortie.get_coord_x();
-//
-//                    float yA = ptIntersectionEntree.get_coord_y();
-//                    float yB = ptIntersectionSortie.get_coord_y();
-//
-//
-//                    float distanceEntreDeuxPointsIntemp = sqrt((xA-xB)*(xA-xB)+(yA-yB)*(yA-yB));
-//                    //cout << distanceEntreDeuxPointsIntemp << endl;
-//
-//                    float xC = m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_x();
-//                    float yC = m_ensembleRoutes[j]->getAeroport(0)->get_position().get_coord_y();
-//
-//                    float distanceDepIntemp = sqrt((xA-xC)*(xA-xC)+(yA-yC)*(yA-yC));
-//
-//                    distanceDepIntemp = distanceDepIntemp*4000/273.61;
-//                    distanceEntreDeuxPointsIntemp = distanceEntreDeuxPointsIntemp*4000/273.61;
-//
-//                    //cout << "Distance dep - intemp " << distanceDepIntemp << "km" << endl;
-//                    //cout << "Distance intemp - intemp " << distanceEntreDeuxPointsIntemp << "km"<< endl;
-//
-//
-//
-//
-//                    // PROGRAMME VICTOIRE
-//
-//
-//
-//
-//                    if(distanceDepIntemp > 0 && distanceEntreDeuxPointsIntemp > 0)
-//                    {
-//                        //On adapte les valeurs de départ et de longueur de l'intempérie
-//                        distanceDepIntemp = int(distanceDepIntemp - (int(distanceDepIntemp)%100));
-//                        distanceEntreDeuxPointsIntemp = int(distanceEntreDeuxPointsIntemp - (int(distanceEntreDeuxPointsIntemp)%100));
-//
-//
-//
-//                        //On parcourt le tableau de cases de la route
-//                        for(int k=0 ; k<int(m_ensembleRoutes[j]->getTabEtats().size()) ; k++)
-//                        {
-//                            for(int m=0 ; m<12 ; m++)
-//                            {
-//                                //SI la case n'a pas encore de coloration
-//                                if(m_ensembleRoutes[j]->getTabEtats()[k][m] == 0)
-//                                {
-//                                    //SI la case est dans la plage de valeur de l'intempérie
-//                                    if(k*100 >= distanceDepIntemp && k*100 <= distanceDepIntemp + distanceEntreDeuxPointsIntemp && 5750+m*750 == m_listeIntemperies[i]->getAltitudes())
-//                                    {
-//                                        //SI il s'agit du vent
-//                                        if(m_listeIntemperies[i]->get_type() == 2)
-//                                        {
-//                                            //On remplit la case
-//                                            m_ensembleRoutes[j]->actualiserCase(k, m, 2);
-//                                        }
-//                                        //SINON il s'agit de pluie
-//                                        else
-//                                        {
-//                                            //On applique l'intempérie à toutes les cases en dessous
-//                                            for(int n=m ; n<12 ; n++)
-//                                            {
-//                                                m_ensembleRoutes[j]->actualiserCase(k, n, 1);
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//}
 
 //Méthode d'affichage du quadrillage de la map
 void Simulateur::affichageQuadrillage(Ressources &motherShip)

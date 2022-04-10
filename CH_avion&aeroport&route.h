@@ -75,6 +75,7 @@ class Avion
         bool m_etat_reservoir;
 
         int m_etatVol;
+        int m_compteurDetournement;
 
     public :
 
@@ -174,6 +175,8 @@ class Avion
         void changementVitesse(int typeIntemperie);
 
         void set_vitesse(int vitesse);
+
+        void detournement_avion();
 };
 
 
