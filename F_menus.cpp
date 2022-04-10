@@ -16,7 +16,6 @@ bool menuPrincipal(Ressources &motherShip, bool &indicClic, int &modeSimulation,
 
     while(!done)
     {
-
         //Réinitialisation du double buffer
         clear_bitmap(motherShip.getBIT(0));
 
@@ -24,30 +23,12 @@ bool menuPrincipal(Ressources &motherShip, bool &indicClic, int &modeSimulation,
         blit(motherShip.getBIT(1), motherShip.getBIT(0), 0, 0, 0, 0, motherShip.getBIT(1)->w, motherShip.getBIT(1)->h);
 
         //Affichage du menu de base
-        textprintf_centre_ex(motherShip.getBIT(0), motherShip.getFONT(0), centrageTexte, 340, makecol(255,255,255), -1, "Pilote automatique");
-
         textprintf_centre_ex(motherShip.getBIT(0), motherShip.getFONT(0), centrageTexte, 435, makecol(255,255,255), -1, "Prendre les");
         textprintf_centre_ex(motherShip.getBIT(0), motherShip.getFONT(0), centrageTexte, 435+espaceRetourLigne, makecol(255,255,255), -1, "commandes");
 
-        textprintf_centre_ex(motherShip.getBIT(0), motherShip.getFONT(0), 40, SCREEN_H-60, makecol(255,255,255), -1, "?");
-
         textprintf_centre_ex(motherShip.getBIT(0), motherShip.getFONT(0), centrageTexte, 635, makecol(255,255,255), -1, "Quitter");
 
-        //Si l'utilisateur est sur l'un des choix, celui-ci s'affiche dans une autre couleur
-        if((mouse_x >= 1060 && mouse_x <= 1435) && (mouse_y >=340 && mouse_y <= 380)) //Pilote automatique
-        {
-            textprintf_centre_ex(motherShip.getBIT(0), motherShip.getFONT(0), centrageTexte, 340, makecol(250,202,48), -1, "Pilote automatique");
-
-            if(mouse_b & 1 && indicClic == false) // L'utilisateur clique sur la simulation automatique
-            {
-                indicClic = true; //Indication que le clic gauche est maintenu
-                modeSimulation = 0; //Mode de simulation AUTOMATIQUE choisi
-
-                menuSelectionEnvergure(indicClic, done, envergureSimulation, motherShip.getBIT(0), motherShip.getBIT(2), motherShip.getBIT(3), motherShip.getFONT(3), motherShip.getFONT(1), motherShip.getFONT(2), motherShip.getFONT(0));
-            }
-        }
-
-        else if((mouse_x >= 1120 && mouse_x <= 1373) && (mouse_y >=440 && mouse_y <= 523)) //Prendre les commandes
+        if((mouse_x >= 1120 && mouse_x <= 1373) && (mouse_y >=440 && mouse_y <= 523)) //Prendre les commandes
         {
             textprintf_centre_ex(motherShip.getBIT(0), motherShip.getFONT(0), centrageTexte, 435, makecol(250,202,48), -1, "Prendre les");
             textprintf_centre_ex(motherShip.getBIT(0), motherShip.getFONT(0), centrageTexte, 435+espaceRetourLigne, makecol(250,202,48), -1, "commandes");
@@ -58,20 +39,6 @@ bool menuPrincipal(Ressources &motherShip, bool &indicClic, int &modeSimulation,
                 modeSimulation = 1; //Mode de simulation CONTROLEE choisi
 
                 menuSelectionEnvergure(indicClic, done, envergureSimulation, motherShip.getBIT(0), motherShip.getBIT(2), motherShip.getBIT(3), motherShip.getFONT(3), motherShip.getFONT(1), motherShip.getFONT(2), motherShip.getFONT(0));
-            }
-        }
-
-        else if((mouse_x >= 33 && mouse_x <= 53) && (mouse_y >=695 && mouse_y <= 730)) //Règles
-        {
-            textprintf_centre_ex(motherShip.getBIT(0), motherShip.getFONT(0), 40, SCREEN_H-60, makecol(250,202,48), -1, "?");
-
-            if(mouse_b & 1 && indicClic == false) // L'utilisateur clique sur les règles
-            {
-                indicClic = true; //Indication que le clic gauche est maintenu
-
-                //LANCER LES REGLES
-
-                //menuRegles(indicClic, motherShip.getBIT(0), motherShip.getBIT(61), motherShip.getBIT(59), motherShip.getBIT(60), motherShip.getBIT(57), motherShip.getBIT(58), motherShip.getBIT(9), motherShip.getFONT(6)); //Lancement du menu des règles
             }
         }
 

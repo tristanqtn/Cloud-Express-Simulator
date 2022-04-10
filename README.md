@@ -34,4 +34,9 @@ https://en.cppreference.com/w/
 https://www.allegro.cc/manual/4/
 https://pedago-ece.campusonline.me/course/view.php?id=6284
 https://pedago-ece.campusonline.me/course/view.php?id=6303
+https://www.allegro.cc/manual/4/api/blitting-and-sprites/rotate_sprite
+https://liballeg.org/stabledocs/en/alleg014.html
+http://fdrouillon.free.fr/alldocs/Allegro/F.Drouillon_TUTO_ALLEGRO_.pdf
+https://docs.microsoft.com/fr-fr/cpp/cpp/raw-pointers?view=msvc-170
 
+Algos pour théorie des graphes : https://www.geeksforgeeks.org/greedy-algorithms/?ref=shm

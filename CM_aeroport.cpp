@@ -388,21 +388,35 @@ void Aeroport::menuAeroport(Ressources &motherShip, vector<Aeroport> m_aeroports
                     //SI l'avion est un court courrier
                     if(m_pistes[i][j]->get_type_vol() == "court")
                     {
-                        rotate_scaled_sprite(motherShip.getBIT(0), motherShip.getBIT(18), ecartBords+850 + i*decalageAvions, ecartBords+75+(i+1)*ecartInfosAvions,ftofix(0),ftofix(0.5));
+                        rotate_scaled_sprite(motherShip.getBIT(0), motherShip.getBIT(18), ecartBords+850 + j*decalageAvions, ecartBords+75+(i+1)*ecartInfosAvions,ftofix(0),ftofix(0.5));
                     }
                     //SINON SI il s'agit d'un moyen courrier
                     else if(m_pistes[i][j]->get_type_vol() == "moyen")
                     {
-                        rotate_scaled_sprite(motherShip.getBIT(0), motherShip.getBIT(19), ecartBords+850 + i*decalageAvions, ecartBords+75+(i+1)*ecartInfosAvions,ftofix(0),ftofix(0.5));
+                        rotate_scaled_sprite(motherShip.getBIT(0), motherShip.getBIT(19), ecartBords+850 + j*decalageAvions, ecartBords+75+(i+1)*ecartInfosAvions,ftofix(0),ftofix(0.5));
                     }
                     //SINON SI il s'agit d'un long courrier
                     else if(m_pistes[i][j]->get_type_vol() == "long")
                     {
-                        rotate_scaled_sprite(motherShip.getBIT(0), motherShip.getBIT(20), ecartBords+850 + i*decalageAvions, ecartBords+75+(i+1)*ecartInfosAvions,ftofix(0),ftofix(0.5));
+                        rotate_scaled_sprite(motherShip.getBIT(0), motherShip.getBIT(20), ecartBords+850 + j*decalageAvions, ecartBords+75+(i+1)*ecartInfosAvions,ftofix(0),ftofix(0.5));
                     }
 
                     //Affichage des informations de l'avion
-                    m_pistes[i][j]->actualisationSurbrillanceAvion(m_aeroports, false, ecartBords+850 + i*decalageAvions + 21, ecartBords+75*i+21,motherShip.getBIT(0), motherShip.getBIT(26), motherShip.getBIT(30), motherShip.getBIT(27), motherShip.getBIT(28), motherShip.getBIT(29), motherShip.getFONT(7), motherShip.getFONT(2), motherShip.getFONT(10));
+                    m_pistes[i][j]->actualisationSurbrillanceAvion(m_aeroports, false, ecartBords+850 + j*decalageAvions + 21, ecartBords+75+(i+1)*ecartInfosAvions+21,motherShip.getBIT(0), motherShip.getBIT(26), motherShip.getBIT(30), motherShip.getBIT(27), motherShip.getBIT(28), motherShip.getBIT(29), motherShip.getFONT(7), motherShip.getFONT(2), motherShip.getFONT(10));
+                }
+            }
+        }
+
+        //Boucle de parcours de l'ensemble des pistes afin d'afficher les informations des avions
+        for(int i=0 ; i<int(m_pistes.size()) ; i++)
+        {
+            //SI la piste contient des avions
+            if(int(m_pistes[i].size()) >= 1 && m_pistes[i][0] != nullptr)
+            {
+                for(int j=0 ; j<int(m_pistes[i].size()) ; j++)
+                {
+                    //Affichage des informations de l'avion
+                    m_pistes[i][j]->actualisationSurbrillanceAvion(m_aeroports, false, ecartBords+850 + j*decalageAvions + 21, ecartBords+75+(i+1)*ecartInfosAvions+21,motherShip.getBIT(0), motherShip.getBIT(26), motherShip.getBIT(30), motherShip.getBIT(27), motherShip.getBIT(28), motherShip.getBIT(29), motherShip.getFONT(7), motherShip.getFONT(2), motherShip.getFONT(10));
                 }
             }
         }
@@ -644,7 +658,8 @@ void Aeroport::actualisationSortiePistes()
             if(int(m_avions_parking.size()) != 0)
             {
                 //SI le parking n'est pas plein et que le dernier avion dedans a un décalage temporel suffisant par rapport au possible prochain avion
-                if(m_avions_parking.back()->get_duree_prepraration() <= m_queue_sortie_piste[i]->get_duree_prepraration()-2 && int(m_avions_parking.size()) < m_nombre_places_sol)
+                cout << "ACTUALISATION PARKING : " << m_avions_parking.back()->get_duree_prepraration() << " et " << get_delai_attente_sol()-2 << endl;
+                if(m_avions_parking.back()->get_duree_prepraration() <= get_delai_attente_sol()-2 && int(m_avions_parking.size()) < m_nombre_places_sol)
                 {
                     //On indique que l'avion va pouvoir rentrer dans le parking
                     peutParking = true;
