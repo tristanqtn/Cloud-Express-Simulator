@@ -118,6 +118,7 @@ void Ressources::animationAvion(BITMAP* doubleBuffer)
         else //Sinon, affichage de la dernière BITMAP en continu
         {
             blit(m_animAvion[10],doubleBuffer,0,0,0,0,SCREEN_W, SCREEN_H);
+            textprintf_ex(doubleBuffer, m_tabFONT[8], 20, SCREEN_H-48, makecol(255,255,255), -1, "APPUYER SUR ENTREE");
         }
 
         //Affichage du doubleBuffer

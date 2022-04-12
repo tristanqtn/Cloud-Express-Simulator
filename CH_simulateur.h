@@ -56,7 +56,7 @@ class Simulateur
         //Fonctions pratiques du simulateur
         void afficher_aeroports();
         void creer_avion(std::string type_de_vol);
-        void supprimer_avion_aleatoire();
+        void supprimer_avion_aleatoire(std::string type_vol);
         void supprimer_avion_on_click(std::string immatriculation);
 
         void nouveau_crash(Avion * crash);

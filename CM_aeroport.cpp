@@ -658,7 +658,7 @@ void Aeroport::actualisationSortiePistes()
             if(int(m_avions_parking.size()) != 0)
             {
                 //SI le parking n'est pas plein et que le dernier avion dedans a un décalage temporel suffisant par rapport au possible prochain avion
-                cout << "ACTUALISATION PARKING : " << m_avions_parking.back()->get_duree_prepraration() << " et " << get_delai_attente_sol()-2 << endl;
+                //cout << "ACTUALISATION PARKING : " << m_avions_parking.back()->get_duree_prepraration() << " et " << get_delai_attente_sol()-2 << endl;
                 if(m_avions_parking.back()->get_duree_prepraration() <= get_delai_attente_sol()-2 && int(m_avions_parking.size()) < m_nombre_places_sol)
                 {
                     //On indique que l'avion va pouvoir rentrer dans le parking
@@ -931,8 +931,8 @@ void Aeroport::actualisationParking(vector<Aeroport> m_aeroports, int indiceAero
                     //Récupération d'un aéroport de destination
                     prochaineDestination = piocheAeroportAleatoire();
 
-                    cout << endl << "DEPART : " << get_nom() << endl;
-                    cout << "NOUVELLE DESTINATION : " << prochaineDestination << endl;
+                    //cout << endl << "DEPART : " << get_nom() << endl;
+                    //cout << "NOUVELLE DESTINATION : " << prochaineDestination << endl;
 
                     //On parcourt les aéroports afin de trouver l'indice de l'aéroport de départ ainsi que celui d'arrivée
                     for(int i=0 ; i<int(m_aeroports.size()) ; i++)
@@ -993,7 +993,7 @@ void Aeroport::actualisationParking(vector<Aeroport> m_aeroports, int indiceAero
                             }
                         }
                     }
-                cout << verifier_distance_chemin(m_avions_parking.front(), vecteur_escales, m_matrice_adjacence, distance) << endl;
+                //cout << verifier_distance_chemin(m_avions_parking.front(), vecteur_escales, m_matrice_adjacence, distance) << endl;
                 }
                 while(verifier_distance_chemin(m_avions_parking.front(), vecteur_escales, m_matrice_adjacence, distance)==false && recommencer == true );  //blindage distance / type de vol
                 m_avions_parking.front()->set_liste_escales(get_nom()); //Ajout de l'aéroport de départ
