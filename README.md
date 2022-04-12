@@ -40,3 +40,4 @@ http://fdrouillon.free.fr/alldocs/Allegro/F.Drouillon_TUTO_ALLEGRO_.pdf
 https://docs.microsoft.com/fr-fr/cpp/cpp/raw-pointers?view=msvc-170
 
 Algos pour théorie des graphes : https://www.geeksforgeeks.org/greedy-algorithms/?ref=shm
+
