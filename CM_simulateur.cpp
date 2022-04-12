@@ -612,7 +612,7 @@ void Simulateur::nouvelAvionDansParking(Avion *nouvelAvion)
 
     //On tire aléatoirement un des indices parmi ceux disponibles
     indiceAeroportAleatoire = rand()%(int(listeAeroportsDispo.size()));
-    cout << endl << "AEROPORT DE DEPART : " << m_aeroports[listeAeroportsDispo[indiceAeroportAleatoire]].get_nom() << endl << endl;
+    //cout << endl << "AEROPORT DE DEPART : " << m_aeroports[listeAeroportsDispo[indiceAeroportAleatoire]].get_nom() << endl << endl;
 
     //On ajoute l'avion à l'aéroport désigné
     m_aeroports[listeAeroportsDispo[indiceAeroportAleatoire]].ajoutAvionParking(nouvelAvion);
@@ -693,7 +693,7 @@ void Simulateur::creer_avion(string type_de_vol)
     //SI le mode de création est ALEATOIRE
     if(type_de_vol == "aleatoire")
     {
-        cout << " ----- CREATION ALEATOIRE D'UN AVION" << endl;
+        //cout << " ----- CREATION ALEATOIRE D'UN AVION" << endl;
 
         //Génération d'un avion aléatoire
         int choix_aleatoire = rand()%3; //Génération alétoire d'un entier entre 0 et 2 pour type de vol
@@ -895,14 +895,6 @@ void Simulateur::creer_avion(string type_de_vol)
         //Ajout du nouvel avion dans un aéroport aléatoire
         nouvelAvionDansParking(m_flotte_avions.back());
     }
-}
-
-
-//Méthode de suppression aléatoire d'un avion
-void Simulateur::supprimer_avion_aleatoire()
-{
-    int index_suppression = (rand()%m_flotte_avions.size());
-    m_flotte_avions.erase(m_flotte_avions.begin()+index_suppression);
 }
 
 
@@ -1303,6 +1295,28 @@ void Simulateur::menuAjoutAvion(Ressources &motherShip, bool &indicClic, int &et
 //Méthode du menu de suppression d'un avion
 void Simulateur::menuSupprimerAvion(Ressources &motherShip, bool &indicClic, int &etat)
 {
+    bool indicCourtPossible = false;
+    bool indicMoyenPossible = false;
+    bool indicLongPossible = false;;
+
+    for(int i=0 ; i<int(m_flotte_avions.size()) ; i++)
+    {
+        if(m_flotte_avions[i]->get_type_vol() == "court")
+        {
+            indicCourtPossible = true;
+        }
+        else if(m_flotte_avions[i]->get_type_vol() == "moyen")
+        {
+            indicMoyenPossible = true;
+        }
+        else if(m_flotte_avions[i]->get_type_vol() == "long")
+        {
+            indicLongPossible = true;
+        }
+    }
+
+
+
     //Affichage du titre
     textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(9),1200, 30, makecol(255,255,255), -1, "Supprimer");
     textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(3),1200, 110, makecol(255,255,255), -1, "un avion");
@@ -1310,57 +1324,15 @@ void Simulateur::menuSupprimerAvion(Ressources &motherShip, bool &indicClic, int
     //Affichage du bouton retour
     textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1187, 610, makecol(255,255,255),-1, "Retour");
 
-    //SI il reste des avions, on peut encore en supprimer
-    if(encoreDesAvions())
+    if(indicCourtPossible == false && indicMoyenPossible == false && indicLongPossible == false)
     {
-        //Affichage du menu
-        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 250, makecol(255,255,255),-1, "Court courrier");
-        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 300, makecol(255,255,255),-1, "Moyen courrier");
-        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 350, makecol(255,255,255),-1, "Long courrier");
+        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 400, makecol(255,255,255),-1, "Plus d'avions..."); //On l'indique
+    }
+    else
+    {
         textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 400, makecol(255,255,255),-1, "Aleatoire");
-
-
-        //SI la souris passe sur "Court courrier"
-        if(mouse_x > 1200 && mouse_x < 1405 && mouse_y > 250 && mouse_y < 275)
-        {
-            textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 250, makecol(25,255,52),-1, "Court courrier"); //Changement de couleur du texte
-
-            //SI clic
-            if(mouse_b & 1 && indicClic == false)
-            {
-                indicClic = true; //Indication que le clic gauche est pressé
-
-                //Ajout d'un avion court courrier
-            }
-        }
-        //SINON SI la souris passe sur "Moyen courrier"
-        else if(mouse_x > 1200 && mouse_x < 1415 && mouse_y > 300 && mouse_y < 325)
-        {
-            textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 300, makecol(25,255,52),-1, "Moyen courrier"); //Changement de couleur du texte
-
-            //SI clic
-            if(mouse_b & 1 && indicClic == false)
-            {
-                indicClic = true; //Indication que le clic gauche est pressé
-
-                //Ajout d'un avion moyen courrier
-            }
-        }
-        //SINON SI la souris passe sur "Long courrier"
-        else if(mouse_x > 1200 && mouse_x < 1395 && mouse_y > 350 && mouse_y < 375)
-        {
-            textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 350, makecol(25,255,52),-1, "Long courrier"); //Changement de couleur du texte
-
-            //SI clic
-            if(mouse_b & 1 && indicClic == false)
-            {
-                indicClic = true; //Indication que le clic gauche est pressé
-
-                //Ajout d'un avion long courrier
-            }
-        }
         //SINON SI la souris passe sur "Aléatoire"
-        else if(mouse_x > 1200 && mouse_x < 1315 && mouse_y > 400 && mouse_y < 425)
+         if(mouse_x > 1200 && mouse_x < 1315 && mouse_y > 400 && mouse_y < 425)
         {
             textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 400, makecol(25,255,52),-1, "Aleatoire"); //Changement de couleur du texte
 
@@ -1368,15 +1340,63 @@ void Simulateur::menuSupprimerAvion(Ressources &motherShip, bool &indicClic, int
             if(mouse_b & 1 && indicClic == false)
             {
                 indicClic = true; //Indication que le clic gauche est pressé
-
+                supprimer_avion_aleatoire("aleatoire");
                 //Ajout d'un avion aléatoire
             }
         }
-    }
-    //SINON, on ne peut plus supprimer d'avion
-    else
-    {
-        textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 400, makecol(255,255,255),-1, "Plus d'avions..."); //On l'indique
+        if(indicCourtPossible == true)
+        {
+            textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 250, makecol(255,255,255),-1, "Court courrier");
+            //SI la souris passe sur "Court courrier"
+            if(mouse_x > 1200 && mouse_x < 1405 && mouse_y > 250 && mouse_y < 275)
+            {
+                textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 250, makecol(25,255,52),-1, "Court courrier"); //Changement de couleur du texte
+
+                //SI clic
+                if(mouse_b & 1 && indicClic == false)
+                {
+                    indicClic = true; //Indication que le clic gauche est pressé
+                    supprimer_avion_aleatoire("court");
+                    //Ajout d'un avion court courrier
+                }
+            }
+        }
+
+        if(indicMoyenPossible == true)
+        {
+            //SINON SI la souris passe sur "Moyen courrier"
+            textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 300, makecol(255,255,255),-1, "Moyen courrier");
+            if(mouse_x > 1200 && mouse_x < 1415 && mouse_y > 300 && mouse_y < 325)
+            {
+                textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 300, makecol(25,255,52),-1, "Moyen courrier"); //Changement de couleur du texte
+
+                //SI clic
+                if(mouse_b & 1 && indicClic == false)
+                {
+                    indicClic = true; //Indication que le clic gauche est pressé
+                    supprimer_avion_aleatoire("moyen");
+                    //Ajout d'un avion moyen courrier
+                }
+            }
+        }
+
+        if(indicLongPossible == true)
+        {
+            textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 350, makecol(255,255,255),-1, "Long courrier");
+            if(mouse_x > 1200 && mouse_x < 1395 && mouse_y > 350 && mouse_y < 375)
+            {
+                textprintf_ex(motherShip.getBIT(0), motherShip.getFONT(8), 1200, 350, makecol(25,255,52),-1, "Long courrier"); //Changement de couleur du texte
+
+                //SI clic
+                if(mouse_b & 1 && indicClic == false)
+                {
+                    indicClic = true; //Indication que le clic gauche est pressé
+                    supprimer_avion_aleatoire("long");
+                    //Ajout d'un avion long courrier
+                }
+            }
+
+        }
     }
 
     //SI la souris passe sur "Retour"
@@ -1393,6 +1413,35 @@ void Simulateur::menuSupprimerAvion(Ressources &motherShip, bool &indicClic, int
     }
 }
 
+void Simulateur::supprimer_avion_aleatoire(string type_vol)
+{
+    bool sortie = false;
+    int valeur_rand = 0;
+
+    do
+    {
+        valeur_rand = rand()%m_flotte_avions.size();
+        if(m_flotte_avions[valeur_rand]->get_type_vol() == type_vol && m_flotte_avions[valeur_rand]->get_action_en_cours() == 3)
+        {
+            sortie = true;
+        }
+        if((type_vol == "aleatoire") && (m_flotte_avions[valeur_rand]->get_action_en_cours() == 3))
+        {
+            sortie = true;
+        }
+    }while(sortie == false);
+
+    if(m_flotte_avions[valeur_rand]->get_action_en_cours() == 3)
+    {
+
+        for(size_t t=0; t<m_ensembleRoutes.size(); t++)
+        {
+            m_ensembleRoutes[t]->supprimer_avion(m_flotte_avions[valeur_rand]->get_immatriculation());
+        }
+        supprimer_avion_on_click(m_flotte_avions[valeur_rand]->get_immatriculation());
+    }
+
+}
 
 void Simulateur::menuAjoutIntemperie(Ressources &motherShip, bool &indicClic, int &etat)
 {
@@ -1618,7 +1667,7 @@ void Simulateur::nouveau_crash(Avion * crash)
     {}
     else
     {
-        fichier << "Le " << crash->get_modele() << " du vol " << crash->get_immatriculation() << " (" << crash->get_type_vol() << " courrier) au depart de " << crash->getNomAeroportD() << " a destination de " << crash->getNomAeroportD() << " le " << m_horlogeGMT.get_jour() << "/" << m_horlogeGMT.get_mois()<< "/"  << m_horlogeGMT.get_annee()<< " a " << m_horlogeGMT.get_heure().first<< "h" << m_horlogeGMT.get_heure().second<< "\n";
+        fichier << "Le " << crash->get_modele() << " du vol " << crash->get_immatriculation() << " (" << crash->get_type_vol() << " courrier) au depart de " << crash->getNomAeroportD() << " a destination de " << crash->getNomAeroportA() << " le " << m_horlogeGMT.get_jour() << "/" << m_horlogeGMT.get_mois()<< "/"  << m_horlogeGMT.get_annee()<< " a " << m_horlogeGMT.get_heure().first<< "h" << m_horlogeGMT.get_heure().second<< "\n";
         fichier.close();
     }
 
@@ -1891,15 +1940,6 @@ void Simulateur::algoWelsh()
     }
     while(finColoration == false); //Tant que la coloration n'est pas terminée
 
-    /*
-
-    for(int i=0 ; i<int(tabIndicesAeroport.size()) ; i++)
-    {
-        cout << "Indice : " << tabIndicesAeroport[i] << endl;
-        cout << "   Coloration : " << tabColoration[i] << endl;
-        cout << endl;
-    }
-*/
     int compteurCouleur=0;
     int plageAltitude;
     int espacement;
@@ -1932,17 +1972,17 @@ void Simulateur::algoWelsh()
         }
     }
 
-    for(int i = 0 ; i < int(m_aeroports.size());i++)
-    {
-        cout << m_aeroports[i].get_nom() << endl;
-
-        for(int j = 0 ; j < 3 ; j++)
-        {
-            cout<< m_aeroports[i].getAltitudesAvions(j) <<endl;
-        }
-
-        cout << endl;
-    }
+//    for(int i = 0 ; i < int(m_aeroports.size());i++)
+//    {
+//        cout << m_aeroports[i].get_nom() << endl;
+//
+//        for(int j = 0 ; j < 3 ; j++)
+//        {
+//            cout<< m_aeroports[i].getAltitudesAvions(j) <<endl;
+//        }
+//
+//        cout << endl;
+//    }
 }
 
 void Simulateur::rechercheIntemperie(Ressources& motherShip)

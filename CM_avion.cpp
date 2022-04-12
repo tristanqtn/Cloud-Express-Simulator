@@ -819,7 +819,7 @@ bool Avion::actualiser_action_avion()
                 else if(m_compteurDetournement == 1)
                 {
                     m_quantite_kerosene = 0;
-                    cout << "Explosion du vol " << m_immatriculation << endl;
+                   // cout << "Explosion du vol " << m_immatriculation << endl;
                 }
             }
 
@@ -1088,7 +1088,7 @@ bool Avion::consommer_kerosene()
 
     if(m_quantite_kerosene<100)
     {
-        cout << "crash du vol " << m_immatriculation << endl;
+        //cout << "crash du vol " << m_immatriculation << endl;
         rendu = true;
     }
     return rendu;
@@ -1200,7 +1200,7 @@ void Avion::changementVitesse(int typeIntemperie)
     }
 
     parametrer_nouveau_vol(m_coord.get_coord_x(),m_coord.get_coord_y(),m_coordArrivee.first,m_coordArrivee.second);
-    cout << "fin changement vitesse" << endl;
+    //cout << "fin changement vitesse" << endl;
 }
 
 void Avion::set_vitesse(int vitesse)
